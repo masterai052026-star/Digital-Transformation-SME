@@ -43,7 +43,8 @@
       <div class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
         <a href="#pain" class="hover:text-brand-600 transition">Nỗi đau SME</a>
         <a href="#solutions" class="hover:text-brand-600 transition">Giải pháp</a>
-        <a href="#register" class="hover:text-brand-600 transition">Đăng ký tư vấn</a>
+        <a href="#expert" class="hover:text-brand-600 transition">Chuyên gia</a>
+        <a href="#register" class="hover:text-brand-600 transition">Đặt lịch</a>
       </div>
       <a href="#register" class="inline-flex items-center px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 transition shadow-sm">
         Tư vấn miễn phí
@@ -125,42 +126,69 @@
   <!-- Pain Points -->
   <section id="pain" class="py-20 sm:py-24 bg-white">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center max-w-2xl mx-auto">
+      <div class="text-center max-w-3xl mx-auto">
         <h2 class="text-3xl sm:text-4xl font-bold text-brand-900">Nỗi đau của SME</h2>
-        <p class="mt-4 text-slate-600">Nhiều doanh nghiệp vừa và nhỏ đang vận hành bằng công cụ rời rạc — chi phí ẩn tăng dần theo thời gian.</p>
+        <p class="mt-4 text-slate-600 leading-relaxed">
+          Khi doanh nghiệp vượt quy mô “chạy bằng kinh nghiệm”, chi phí ẩn lớn nhất không phải phần mềm — mà là <strong class="text-brand-900">dữ liệu không nói cùng một ngôn ngữ</strong> giữa các phòng ban, khiến lãnh đạo quyết định muộn và sai lệch.
+        </p>
       </div>
-      <div class="mt-14 grid md:grid-cols-2 gap-8">
-        <article class="group p-8 rounded-2xl border border-slate-200 bg-slate-50 hover:border-red-200 hover:bg-red-50/30 transition">
+      <div class="mt-14 grid lg:grid-cols-3 gap-8">
+        <article class="p-8 rounded-2xl border border-slate-200 bg-slate-50 hover:border-red-200 hover:shadow-md transition">
           <div class="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center mb-6">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           </div>
-          <h3 class="text-xl font-bold text-brand-900">Quản lý thủ công, dữ liệu phân tán</h3>
+          <h3 class="text-xl font-bold text-brand-900">Dữ liệu phân mảnh giữa các phòng ban</h3>
           <p class="mt-3 text-slate-600 leading-relaxed">
-            Excel, Zalo, email và sổ sách song song — nhân viên nhập liệu trùng lặp, báo cáo chậm vài ngày, sai sót khó truy vết khi doanh thu tăng.
+            Kinh doanh lưu CRM, kho dùng phần mềm riêng, kế toán có file Excel “chuẩn nội bộ”, HR giữ danh sách nhân sự tách biệt. Mỗi phòng ban sở hữu một “sự thật” riêng — khi đối chiếu, số liệu không khớp và không ai chịu trách nhiệm cho phiên bản cuối cùng.
           </p>
-          <ul class="mt-5 space-y-2 text-sm text-slate-500">
-            <li class="flex items-start gap-2"><span class="text-red-500 mt-0.5">✕</span> Mất 15–20 giờ/tuần cho công việc lặp lại</li>
-            <li class="flex items-start gap-2"><span class="text-red-500 mt-0.5">✕</span> Không có “một nguồn sự thật” cho khách hàng &amp; tồn kho</li>
+          <ul class="mt-5 space-y-2.5 text-sm text-slate-600">
+            <li class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">→</span> Khách hàng tồn tại ở 3 nơi với 3 mã khác nhau</li>
+            <li class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">→</span> Tồn kho “ảo” vì bán hàng và xuất kho không đồng bộ</li>
+            <li class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">→</span> Chi phí tích hợp thủ công tăng mỗi khi thêm chi nhánh</li>
           </ul>
         </article>
-        <article class="group p-8 rounded-2xl border border-slate-200 bg-slate-50 hover:border-amber-200 hover:bg-amber-50/30 transition">
+        <article class="p-8 rounded-2xl border border-slate-200 bg-slate-50 hover:border-amber-200 hover:shadow-md transition">
           <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mb-6">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 class="text-xl font-bold text-brand-900">Mất kiểm soát dòng dữ liệu</h3>
+          <h3 class="text-xl font-bold text-brand-900">Mất thời gian làm báo cáo thủ công</h3>
           <p class="mt-3 text-slate-600 leading-relaxed">
-            Hệ thống mua rời không nói chuyện được với nhau — quyết định dựa trên cảm tính thay vì số liệu thời gian thực, rủi ro rò rỉ và trùng lặp dữ liệu.
+            Cuối tuần, đầu tháng, cuối quý — team vận hành và kế toán “đi săn số liệu”: gọi điện hỏi phòng ban, copy-paste giữa file, chỉnh sửa công thức Excel. Báo cáo ra muộn 2–5 ngày, đã lỗi thời trước khi ban lãnh đạo kịp họp.
           </p>
-          <ul class="mt-5 space-y-2 text-sm text-slate-500">
-            <li class="flex items-start gap-2"><span class="text-amber-500 mt-0.5">✕</span> Báo cáo tài chính &amp; vận hành không khớp</li>
-            <li class="flex items-start gap-2"><span class="text-amber-500 mt-0.5">✕</span> Khó mở rộng kênh bán hoặc chi nhánh mới</li>
+          <ul class="mt-5 space-y-2.5 text-sm text-slate-600">
+            <li class="flex items-start gap-2"><span class="text-amber-600 font-bold mt-0.5">→</span> 20–40% thời gian quản lý dành cho tổng hợp, không phải ra quyết định</li>
+            <li class="flex items-start gap-2"><span class="text-amber-600 font-bold mt-0.5">→</span> Sai số nhập tay — một ô Excel sai là cả chuỗi KPI lệch</li>
+            <li class="flex items-start gap-2"><span class="text-amber-600 font-bold mt-0.5">→</span> Không scale được khi headcount tăng gấp đôi</li>
+          </ul>
+        </article>
+        <article class="p-8 rounded-2xl border border-slate-200 bg-slate-50 hover:border-violet-200 hover:shadow-md transition">
+          <div class="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center mb-6">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-brand-900">CEO mù mờ số liệu real-time</h3>
+          <p class="mt-3 text-slate-600 leading-relaxed">
+            Trong cuộc họp chiến lược, câu hỏi “doanh thu thực tế hôm nay?” hay “tỷ lệ churn tháng này?” không có câu trả lời ngay — chỉ có ước lượng từ báo cáo tuần trước. CEO ra quyết định đầu tư, tuyển dụng, mở rộng dựa trên <em>cảm nhận thị trường</em> thay vì dashboard thống nhất.
+          </p>
+          <ul class="mt-5 space-y-2.5 text-sm text-slate-600">
+            <li class="flex items-start gap-2"><span class="text-violet-600 font-bold mt-0.5">→</span> Phản ứng chậm với biến động giá vốn, tồn kho, cash flow</li>
+            <li class="flex items-start gap-2"><span class="text-violet-600 font-bold mt-0.5">→</span> Khó đánh giá ROI của chiến dịch marketing / kênh mới</li>
+            <li class="flex items-start gap-2"><span class="text-violet-600 font-bold mt-0.5">→</span> Rủi ro quyết định “đốt tiền” trước khi thấy tín hiệu cảnh báo</li>
           </ul>
         </article>
       </div>
+      <blockquote class="mt-12 p-6 sm:p-8 rounded-2xl bg-brand-900 text-white text-center max-w-4xl mx-auto">
+        <p class="text-lg sm:text-xl font-medium leading-relaxed">
+          “Chúng tôi có đủ phần mềm — nhưng không có <span class="text-blue-300">một dòng dữ liệu tin cậy</span> từ bán hàng đến báo cáo cho CEO.”
+        </p>
+        <footer class="mt-4 text-sm text-slate-400">— Câu chuyện phổ biến tại SME 50–200 nhân sự</footer>
+      </blockquote>
     </div>
   </section>
 
@@ -203,71 +231,116 @@
     </div>
   </section>
 
-  <!-- Registration Form -->
-  <section id="register" class="py-20 sm:py-24 bg-white">
+  <!-- Expert Profile -->
+  <section id="expert" class="py-20 sm:py-24 bg-white border-y border-slate-200">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-        <div>
-          <h2 class="text-3xl sm:text-4xl font-bold text-brand-900">Đăng ký tư vấn miễn phí</h2>
-          <p class="mt-4 text-slate-600 leading-relaxed">
-            Điền thông tin bên dưới — chúng tôi sẽ chuyển bạn đến trang đặt lịch Calendly để chọn khung giờ phù hợp trong 30 phút tư vấn trực tuyến.
-          </p>
-          <ul class="mt-8 space-y-4 text-sm text-slate-600">
-            <li class="flex items-center gap-3">
-              <span class="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">1</span>
-              Điền form &amp; gửi thông tin
-            </li>
-            <li class="flex items-center gap-3">
-              <span class="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">2</span>
-              Chọn khung giờ trên Calendly
-            </li>
-            <li class="flex items-center gap-3">
-              <span class="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">3</span>
-              Nhận link Google Meet qua email
-            </li>
-          </ul>
+      <div class="grid lg:grid-cols-5 gap-12 lg:gap-16 items-center">
+        <div class="lg:col-span-2 flex justify-center">
+          <div class="relative w-48 h-48 sm:w-56 sm:h-56 rounded-2xl bg-gradient-to-br from-brand-500 to-indigo-700 flex items-center justify-center shadow-xl shadow-brand-500/30">
+            <span class="text-6xl sm:text-7xl font-extrabold text-white/90 select-none" aria-hidden="true">DX</span>
+            <div class="absolute -bottom-3 -right-3 px-3 py-1.5 rounded-lg bg-white border border-slate-200 shadow-md text-xs font-bold text-brand-700">
+              EMBA · Mỹ
+            </div>
+          </div>
         </div>
-        <form id="consult-form" class="p-8 rounded-2xl border border-slate-200 bg-slate-50 shadow-sm space-y-5" novalidate>
-          <div>
-            <label for="name" class="block text-sm font-medium text-slate-700 mb-1.5">Họ và tên <span class="text-red-500">*</span></label>
-            <input type="text" id="name" name="name" required
-              class="w-full px-4 py-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
-              placeholder="Nguyễn Văn A" />
-          </div>
-          <div>
-            <label for="company" class="block text-sm font-medium text-slate-700 mb-1.5">Tên doanh nghiệp <span class="text-red-500">*</span></label>
-            <input type="text" id="company" name="company" required
-              class="w-full px-4 py-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
-              placeholder="Công ty TNHH ABC" />
-          </div>
-          <div>
-            <label for="email" class="block text-sm font-medium text-slate-700 mb-1.5">Email công việc <span class="text-red-500">*</span></label>
-            <input type="email" id="email" name="email" required
-              class="w-full px-4 py-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
-              placeholder="ban@giongdoanhnghiep.vn" />
-          </div>
-          <div>
-            <label for="phone" class="block text-sm font-medium text-slate-700 mb-1.5">Số điện thoại</label>
-            <input type="tel" id="phone" name="phone"
-              class="w-full px-4 py-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
-              placeholder="090x xxx xxx" />
-          </div>
-          <div>
-            <label for="message" class="block text-sm font-medium text-slate-700 mb-1.5">Vấn đề bạn muốn trao đổi</label>
-            <textarea id="message" name="message" rows="3"
-              class="w-full px-4 py-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition resize-none"
-              placeholder="VD: Muốn tích hợp CRM với kế toán, đang dùng Excel quản lý đơn hàng..."></textarea>
-          </div>
-          <p id="form-error" class="hidden text-sm text-red-600 font-medium"></p>
-          <button type="submit"
-            class="w-full py-3.5 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition shadow-md shadow-brand-500/20">
-            Tiếp tục đặt lịch trên Calendly
-          </button>
-          <p class="text-xs text-slate-500 text-center">
-            Bằng việc gửi form, bạn đồng ý được liên hệ qua email/điện thoại để xác nhận lịch tư vấn.
+        <div class="lg:col-span-3">
+          <span class="text-sm font-semibold text-brand-600 uppercase tracking-wide">Về chuyên gia tư vấn</span>
+          <h2 class="mt-2 text-3xl sm:text-4xl font-bold text-brand-900">Kết hợp chiều sâu kỹ thuật &amp; tư duy điều hành</h2>
+          <p class="mt-4 text-slate-600 leading-relaxed">
+            Tôi làm việc với SME ở giao điểm <strong class="text-brand-900">kiến trúc hệ thống</strong> và <strong class="text-brand-900">chiến lược vận hành</strong> — không chỉ vẽ sơ đồ đẹp mà đảm bảo lộ trình chuyển đổi số khả thi với nguồn lực và ngân sách thực tế của doanh nghiệp vừa và nhỏ.
           </p>
-        </form>
+          <div class="mt-8 grid sm:grid-cols-3 gap-4">
+            <div class="p-5 rounded-xl bg-slate-50 border border-slate-200">
+              <p class="text-3xl font-extrabold text-brand-600">10+</p>
+              <p class="mt-1 text-sm font-semibold text-brand-900">Năm Technical Code</p>
+              <p class="mt-2 text-xs text-slate-500 leading-relaxed">Thiết kế hệ thống, API, tích hợp dữ liệu — hiểu sâu cách phần mềm vận hành trong thực tế.</p>
+            </div>
+            <div class="p-5 rounded-xl bg-slate-50 border border-slate-200">
+              <p class="text-3xl font-extrabold text-brand-600">10+</p>
+              <p class="mt-1 text-sm font-semibold text-brand-900">Quản lý &amp; điều hành DN</p>
+              <p class="mt-2 text-xs text-slate-500 leading-relaxed">Từng trực tiếp vận hành P&amp;L, quy trình, con người — nói được ngôn ngữ của CEO và phòng ban.</p>
+            </div>
+            <div class="p-5 rounded-xl bg-slate-50 border border-slate-200">
+              <p class="text-3xl font-extrabold text-brand-600">EMBA</p>
+              <p class="mt-1 text-sm font-semibold text-brand-900">Bằng Mỹ</p>
+              <p class="mt-2 text-xs text-slate-500 leading-relaxed">Tư duy chiến lược, tài chính doanh nghiệp và quản trị thay đổi theo chuẩn quốc tế.</p>
+            </div>
+          </div>
+          <p class="mt-6 text-sm text-slate-500 italic">
+            “Mục tiêu của tôi: giúp bạn có một kiến trúc dữ liệu mà ban lãnh đạo tin được — trước khi bỏ ngân sách vào phần mềm mới.”
+          </p>
+        </div>
       </div>
+    </div>
+  </section>
+
+  <!-- Calendly Booking -->
+  <section id="register" class="py-20 sm:py-24 bg-gradient-to-b from-slate-50 to-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto">
+        <h2 class="text-3xl sm:text-4xl font-bold text-brand-900">Đặt lịch tư vấn 30 phút miễn phí</h2>
+        <p class="mt-4 text-slate-600">
+          Chọn khung giờ phù hợp trực tiếp trên lịch — xác nhận tự động qua email, kèm link họp trực tuyến.
+        </p>
+        <button type="button" id="calendly-popup-btn"
+          class="mt-6 inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition shadow-lg shadow-brand-500/25">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Mở lịch đặt hẹn (Calendly)
+        </button>
+      </div>
+      <div class="mt-12 rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+        <iframe
+          id="calendly-iframe"
+          title="Đặt lịch tư vấn 30 phút miễn phí"
+          class="w-full border-0"
+          height="700"
+          loading="lazy"
+          src="">
+        </iframe>
+      </div>
+      <p class="mt-4 text-center text-xs text-slate-500">
+        Không thấy lịch? <a id="calendly-fallback-link" href="#" target="_blank" rel="noopener noreferrer" class="text-brand-600 font-medium hover:underline">Mở Calendly trong tab mới</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- NDA / Security Commitment -->
+  <section id="security" class="py-16 sm:py-20 bg-slate-900 text-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mx-auto text-center">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 mb-6">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-bold">Cam kết bảo mật thông tin (NDA)</h2>
+        <p class="mt-4 text-slate-300 leading-relaxed">
+          Mọi dữ liệu bạn chia sẻ trong buổi tư vấn — quy trình nội bộ, số liệu kinh doanh, sơ đồ hệ thống — được xử lý theo nguyên tắc <strong class="text-white">bảo mật tuyệt đối</strong>. Trước khi đi sâu vào hiện trạng doanh nghiệp, chúng tôi ký <strong class="text-white">Thỏa thuận bảo mật (NDA)</strong> hai chiều theo yêu cầu.
+        </p>
+      </div>
+      <ul class="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+        <li class="p-5 rounded-xl bg-white/5 border border-white/10 text-sm">
+          <span class="text-emerald-400 font-bold">✓</span>
+          <span class="ml-2 text-slate-200">Không chia sẻ dữ liệu cho bên thứ ba</span>
+        </li>
+        <li class="p-5 rounded-xl bg-white/5 border border-white/10 text-sm">
+          <span class="text-emerald-400 font-bold">✓</span>
+          <span class="ml-2 text-slate-200">Chỉ dùng thông tin cho mục đích tư vấn</span>
+        </li>
+        <li class="p-5 rounded-xl bg-white/5 border border-white/10 text-sm">
+          <span class="text-emerald-400 font-bold">✓</span>
+          <span class="ml-2 text-slate-200">Xóa tài liệu theo yêu cầu sau dự án</span>
+        </li>
+        <li class="p-5 rounded-xl bg-white/5 border border-white/10 text-sm">
+          <span class="text-emerald-400 font-bold">✓</span>
+          <span class="ml-2 text-slate-200">NDA chuẩn, ký trước khi khảo sát sâu</span>
+        </li>
+      </ul>
+      <p class="mt-8 text-center text-sm text-slate-400">
+        Tài sản dữ liệu của SME là lợi thế cạnh tranh — chúng tôi coi trọng việc bảo vệ nó như bảo vệ uy tín tư vấn của chính mình.
+      </p>
     </div>
   </section>
 
@@ -279,46 +352,28 @@
     </div>
   </footer>
 
+  <!-- Calendly widget (popup) -->
+  <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet" />
+  <script src="https://assets.calendly.com/assets/external/widget.js" type="text/javascript" async></script>
   <script>
   (function () {
-    // Link Calendly giả định — thay bằng URL thật khi triển khai
-    var CALENDLY_BASE = 'https://calendly.com/digital-sme-vn/tu-van-30-phut-mien-phi';
+    // Thay URL bằng link Calendly thật của bạn (Settings → Event types → Copy link)
+    var CALENDLY_URL = 'https://calendly.com/masterai052026-star/tu-van-30-phut-mien-phi';
+    var CALENDLY_EMBED = CALENDLY_URL + '?embed=true&hide_gdpr_banner=1';
 
-    var form = document.getElementById('consult-form');
-    var errorEl = document.getElementById('form-error');
+    var iframe = document.getElementById('calendly-iframe');
+    var fallbackLink = document.getElementById('calendly-fallback-link');
+    var popupBtn = document.getElementById('calendly-popup-btn');
 
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      errorEl.classList.add('hidden');
+    iframe.src = CALENDLY_EMBED;
+    fallbackLink.href = CALENDLY_URL;
 
-      var name = document.getElementById('name').value.trim();
-      var company = document.getElementById('company').value.trim();
-      var email = document.getElementById('email').value.trim();
-      var phone = document.getElementById('phone').value.trim();
-      var message = document.getElementById('message').value.trim();
-
-      if (!name || !company || !email) {
-        errorEl.textContent = 'Vui lòng điền đầy đủ Họ tên, Doanh nghiệp và Email.';
-        errorEl.classList.remove('hidden');
-        return;
+    popupBtn.addEventListener('click', function () {
+      if (typeof Calendly !== 'undefined' && Calendly.initPopupWidget) {
+        Calendly.initPopupWidget({ url: CALENDLY_URL });
+      } else {
+        window.open(CALENDLY_URL, '_blank', 'noopener,noreferrer');
       }
-
-      var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailPattern.test(email)) {
-        errorEl.textContent = 'Email không hợp lệ. Vui lòng kiểm tra lại.';
-        errorEl.classList.remove('hidden');
-        return;
-      }
-
-      var params = new URLSearchParams({
-        name: name,
-        email: email,
-        a1: company,
-        a2: phone || 'Không cung cấp',
-        a3: message || 'Không có ghi chú thêm'
-      });
-
-      window.location.href = CALENDLY_BASE + '?' + params.toString();
     });
   })();
   </script>
