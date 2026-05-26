@@ -30,6 +30,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet" />
 </head>
 <body class="font-sans text-slate-800 antialiased bg-slate-50">
 
@@ -274,34 +275,27 @@
     </div>
   </section>
 
-  <!-- Calendly Booking -->
+  <!-- Đăng ký tư vấn — Calendly inline -->
   <section id="register" class="py-20 sm:py-24 bg-gradient-to-b from-slate-50 to-white">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center max-w-2xl mx-auto">
-        <h2 class="text-3xl sm:text-4xl font-bold text-brand-900">Đặt lịch tư vấn 30 phút miễn phí</h2>
-        <p class="mt-4 text-slate-600">
-          Chọn khung giờ phù hợp trực tiếp trên lịch — xác nhận tự động qua email, kèm link họp trực tuyến.
+        <h2 class="text-3xl sm:text-4xl font-bold text-brand-900">Đăng ký tư vấn 30 phút miễn phí</h2>
+        <p class="mt-4 text-slate-600 leading-relaxed">
+          Chọn khung giờ phù hợp ngay bên dưới — xác nhận tự động qua email, kèm link họp trực tuyến.
         </p>
-        <button type="button" id="calendly-popup-btn"
-          class="mt-6 inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition shadow-lg shadow-brand-500/25">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          Mở lịch đặt hẹn (Calendly)
-        </button>
       </div>
-      <div class="mt-12 rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
-        <iframe
-          id="calendly-iframe"
-          title="Đặt lịch tư vấn 30 phút miễn phí"
-          class="w-full border-0"
-          height="700"
-          loading="lazy"
-          src="">
-        </iframe>
+      <div class="mt-12 rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/60 overflow-hidden ring-1 ring-slate-100">
+        <!-- Calendly inline widget begin -->
+        <div
+          class="calendly-inline-widget w-full"
+          data-url="https://calendly.com/masterai052026"
+          style="min-width:320px;height:700px;">
+        </div>
+        <!-- Calendly inline widget end -->
       </div>
       <p class="mt-4 text-center text-xs text-slate-500">
-        Không thấy lịch? <a id="calendly-fallback-link" href="#" target="_blank" rel="noopener noreferrer" class="text-brand-600 font-medium hover:underline">Mở Calendly trong tab mới</a>
+        Không thấy lịch?
+        <a href="https://calendly.com/masterai052026" target="_blank" rel="noopener noreferrer" class="text-brand-600 font-medium hover:underline">Mở Calendly trong tab mới</a>
       </p>
     </div>
   </section>
@@ -352,30 +346,6 @@
     </div>
   </footer>
 
-  <!-- Calendly widget (popup) -->
-  <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet" />
-  <script src="https://assets.calendly.com/assets/external/widget.js" type="text/javascript" async></script>
-  <script>
-  (function () {
-    // Thay URL bằng link Calendly thật của bạn (Settings → Event types → Copy link)
-    var CALENDLY_URL = 'https://calendly.com/masterai052026-star/tu-van-30-phut-mien-phi';
-    var CALENDLY_EMBED = CALENDLY_URL + '?embed=true&hide_gdpr_banner=1';
-
-    var iframe = document.getElementById('calendly-iframe');
-    var fallbackLink = document.getElementById('calendly-fallback-link');
-    var popupBtn = document.getElementById('calendly-popup-btn');
-
-    iframe.src = CALENDLY_EMBED;
-    fallbackLink.href = CALENDLY_URL;
-
-    popupBtn.addEventListener('click', function () {
-      if (typeof Calendly !== 'undefined' && Calendly.initPopupWidget) {
-        Calendly.initPopupWidget({ url: CALENDLY_URL });
-      } else {
-        window.open(CALENDLY_URL, '_blank', 'noopener,noreferrer');
-      }
-    });
-  })();
-  </script>
+  <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
 </body>
 </html>
