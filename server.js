@@ -3,12 +3,14 @@ const fs = require("fs");
 const fsp = require("fs/promises");
 const path = require("path");
 const crypto = require("crypto");
+const { spawn } = require("child_process");
 const { URL } = require("url");
 const { Client } = require("@notionhq/client");
 
 const PORT = process.env.PORT || 3000;
 const ROOT_DIR = __dirname;
 const DATA_PATH = path.join(ROOT_DIR, "data.json");
+const AGENT_STATUS_PATH = path.join(ROOT_DIR, "agents", ".generation-status.json");
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8;
 
 const sessions = new Map();
@@ -345,6 +347,148 @@ async function readReportFile(department) {
     filename: meta.file,
     content,
     updatedAt: stat.mtime.toISOString()
+  };
+}
+
+function readAgentGenerationStatus() {
+  try {
+    if (!fs.existsSync(AGENT_STATUS_PATH)) {
+      return { running: false, startedAt: null, completedAt: null, lastError: null, context: null };
+    }
+    return JSON.parse(fs.readFileSync(AGENT_STATUS_PATH, "utf8"));
+  } catch (err) {
+    return { running: false, startedAt: null, completedAt: null, lastError: err.message, context: null };
+  }
+}
+
+function writeAgentGenerationStatus(payload) {
+  const agentsDir = path.join(ROOT_DIR, "agents");
+  if (!fs.existsSync(agentsDir)) fs.mkdirSync(agentsDir, { recursive: true });
+  fs.writeFileSync(AGENT_STATUS_PATH, JSON.stringify(payload, null, 2), "utf8");
+}
+
+async function triggerN8nAgentWebhook(context, username) {
+  const webhookUrl = process.env.N8N_AGENT_WEBHOOK_URL;
+  const response = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      context,
+      source: "admin",
+      triggeredBy: username,
+      requestedAt: new Date().toISOString()
+    })
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`n8n webhook failed (${response.status}): ${detail.slice(0, 200)}`);
+  }
+}
+
+function spawnLocalAgentGeneration(context, username) {
+  writeAgentGenerationStatus({
+    running: true,
+    startedAt: new Date().toISOString(),
+    completedAt: null,
+    lastError: null,
+    context,
+    triggeredBy: username,
+    mode: "local"
+  });
+
+  const child = spawn(process.execPath, [path.join(ROOT_DIR, "run-agents.js")], {
+    env: { ...process.env, AGENT_MARKET_CONTEXT: context },
+    detached: true,
+    stdio: "ignore",
+    cwd: ROOT_DIR
+  });
+
+  child.unref();
+
+  child.on("exit", code => {
+    const current = readAgentGenerationStatus();
+    writeAgentGenerationStatus({
+      ...current,
+      running: false,
+      completedAt: new Date().toISOString(),
+      lastError: code === 0 ? null : `Agent process exited with code ${code}`
+    });
+  });
+
+  child.on("error", err => {
+    const current = readAgentGenerationStatus();
+    writeAgentGenerationStatus({
+      ...current,
+      running: false,
+      completedAt: new Date().toISOString(),
+      lastError: err.message
+    });
+  });
+}
+
+async function startAgentGeneration(context, username) {
+  const status = readAgentGenerationStatus();
+  if (status.running) {
+    return { ok: false, status: 409, message: "AI Agents đang chạy. Vui lòng đợi hoàn tất." };
+  }
+
+  const trimmedContext = String(context || "").trim();
+  if (!trimmedContext) {
+    return { ok: false, status: 400, message: "Vui lòng nhập yêu cầu/bối cảnh thị trường mới." };
+  }
+
+  if (process.env.N8N_AGENT_WEBHOOK_URL) {
+    writeAgentGenerationStatus({
+      running: true,
+      startedAt: new Date().toISOString(),
+      completedAt: null,
+      lastError: null,
+      context: trimmedContext,
+      triggeredBy: username,
+      mode: "n8n"
+    });
+
+    try {
+      await triggerN8nAgentWebhook(trimmedContext, username);
+      writeAgentGenerationStatus({
+        running: false,
+        startedAt: readAgentGenerationStatus().startedAt,
+        completedAt: new Date().toISOString(),
+        lastError: null,
+        context: trimmedContext,
+        triggeredBy: username,
+        mode: "n8n"
+      });
+      return { ok: true, status: 202, mode: "n8n", message: "Đã gửi yêu cầu tới n8n webhook." };
+    } catch (err) {
+      writeAgentGenerationStatus({
+        running: false,
+        startedAt: readAgentGenerationStatus().startedAt,
+        completedAt: new Date().toISOString(),
+        lastError: err.message,
+        context: trimmedContext,
+        triggeredBy: username,
+        mode: "n8n"
+      });
+      return { ok: false, status: 502, message: "Không kích hoạt được n8n webhook.", detail: err.message };
+    }
+  }
+
+  if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY) {
+    return {
+      ok: false,
+      status: 503,
+      message: "Chưa cấu hình GEMINI_API_KEY hoặc N8N_AGENT_WEBHOOK_URL trên server."
+    };
+  }
+
+  spawnLocalAgentGeneration(trimmedContext, username);
+  return {
+    ok: true,
+    status: 202,
+    mode: "local",
+    message: "AI Agents đang chạy ngầm. Quá trình mất khoảng 1-2 phút."
   };
 }
 
@@ -873,6 +1017,31 @@ const server = http.createServer(async (req, res) => {
     await writeData(data);
     res.writeHead(204, { "Access-Control-Allow-Origin": "*" });
     res.end();
+    return;
+  }
+
+  if (req.method === "GET" && pathname === "/api/generate-plan/status") {
+    const session = requireAuth(req, res, "content.read");
+    if (!session) return;
+    sendJson(res, 200, readAgentGenerationStatus());
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/generate-plan") {
+    const session = requireAuth(req, res, "content.write");
+    if (!session) return;
+    try {
+      const body = await parseBody(req);
+      const result = await startAgentGeneration(body.context || body.marketContext, session.username);
+      sendJson(res, result.status, {
+        ok: result.ok,
+        message: result.message,
+        mode: result.mode || null,
+        detail: result.detail || null
+      });
+    } catch (err) {
+      sendJson(res, 500, { message: "Không kích hoạt được AI Agents.", detail: err.message });
+    }
     return;
   }
 

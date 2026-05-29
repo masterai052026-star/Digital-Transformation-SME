@@ -101,6 +101,37 @@ Bối cảnh Doanh nghiệp tư vấn: "Digital SME"
 - Phương châm: "Có một kiến trúc dữ liệu mà ban lãnh đạo tin được trước khi bỏ ngân sách vào phần mềm mới".
 `;
 
+function buildFullContext() {
+  const extra = (process.env.AGENT_MARKET_CONTEXT || "").trim();
+  if (!extra) return BUSINESS_CONTEXT;
+  return `${BUSINESS_CONTEXT}
+
+--- YÊU CẦU/BỐI CẢNH MỚI TỪ BAN LÃNH ĐẠO ---
+${extra}
+---`;
+}
+
+const FULL_CONTEXT = buildFullContext();
+const AGENT_STATUS_PATH = path.join(__dirname, "agents", ".generation-status.json");
+
+function writeJobStatus(patch) {
+  const agentsDir = path.join(__dirname, "agents");
+  if (!fs.existsSync(agentsDir)) fs.mkdirSync(agentsDir, { recursive: true });
+  let current = {};
+  if (fs.existsSync(AGENT_STATUS_PATH)) {
+    try {
+      current = JSON.parse(fs.readFileSync(AGENT_STATUS_PATH, "utf8"));
+    } catch (err) {
+      current = {};
+    }
+  }
+  fs.writeFileSync(
+    AGENT_STATUS_PATH,
+    JSON.stringify({ ...current, ...patch, updatedAt: new Date().toISOString() }, null, 2),
+    "utf8"
+  );
+}
+
 // ==========================================
 // ĐỊNH NGHĨA CÁC AGENT (PROMPTS & SYSTEM INSTRUCTIONS)
 // ==========================================
@@ -111,7 +142,7 @@ const agents = {
 Công việc của bạn là phân tích sâu các nỗi đau chuyển đổi số của SME Việt Nam và lập kế hoạch tính năng chi tiết cho 3 gói cước dịch vụ chính để trình lên Trưởng phòng Sales.
 Hãy thể hiện sự hiểu biết sâu sắc về doanh nghiệp Việt (ví dụ: thói quen quản lý bằng Excel/Zalo, ngân sách eo hẹp, ngại thay đổi quy trình).`,
     prompt: `Dựa trên bối cảnh:
-${BUSINESS_CONTEXT}
+${FULL_CONTEXT}
 
 Nhiệm vụ của bạn:
 1. Nghiên cứu & mô tả chi tiết 3 nỗi đau lớn nhất của SME Việt Nam khi tự chuyển đổi số.
@@ -228,10 +259,22 @@ Hãy viết báo cáo tài chính chính thức hoàn chỉnh dưới dạng Mar
 async function runWorkflow() {
   console.log("\n========================================================");
   console.log("🚀 KÍCH HOẠT HỆ THỐNG MULTI-AGENT (HIERARCHICAL WORKFLOW)");
+  if (process.env.AGENT_MARKET_CONTEXT) {
+    console.log("📌 Bối cảnh mới từ Admin:", process.env.AGENT_MARKET_CONTEXT.slice(0, 120) + "...");
+  }
   console.log("========================================================\n");
 
   const startTime = Date.now();
   const agentsDir = path.join(__dirname, "agents");
+
+  writeJobStatus({
+    running: true,
+    startedAt: new Date().toISOString(),
+    completedAt: null,
+    lastError: null,
+    context: process.env.AGENT_MARKET_CONTEXT || null,
+    mode: "local"
+  });
 
   try {
     // Tạo thư mục agents nếu chưa tồn tại
@@ -307,10 +350,25 @@ async function runWorkflow() {
     console.log(" 📝 agents/leader-finance.md");
     console.log("========================================================\n");
 
+    writeJobStatus({
+      running: false,
+      completedAt: new Date().toISOString(),
+      lastError: null
+    });
+
   } catch (error) {
     console.error("\n❌ LỖI VẬN HÀNH HỆ THỐNG AGENTS:", error.message);
+    writeJobStatus({
+      running: false,
+      completedAt: new Date().toISOString(),
+      lastError: error.message
+    });
     process.exit(1);
   }
 }
 
-runWorkflow();
+if (require.main === module) {
+  runWorkflow();
+}
+
+module.exports = { runWorkflow };

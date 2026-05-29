@@ -102,6 +102,19 @@
           <h2 class="text-lg font-bold">Chiến lược AI Agents</h2>
           <p class="text-sm text-slate-500 mt-1">Báo cáo chiến lược tự động từ AI Agents — chọn phòng ban để xem.</p>
         </div>
+
+        <div id="generatePlanPanel" class="hidden mb-6 p-5 md:p-6 bg-gradient-to-br from-indigo-50 via-white to-blue-50 border border-indigo-200 rounded-xl shadow-sm">
+          <label for="agentMarketContext" class="block text-sm font-semibold text-slate-800 mb-2">Yêu cầu / Bối cảnh thị trường mới</label>
+          <textarea id="agentMarketContext" rows="3" class="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-y" placeholder="Ví dụ: Dự phóng với ngân sách Marketing giảm 20%, tập trung vào khách hàng SME sản xuất..."></textarea>
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button type="button" id="generatePlanBtn" class="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md disabled:opacity-60 disabled:cursor-not-allowed">
+              🔄 Kích hoạt tạo kế hoạch mới
+            </button>
+            <p class="text-xs text-slate-500">Sales → Marketing → Finance agents sẽ thảo luận và cập nhật báo cáo.</p>
+          </div>
+          <div id="generatePlanStatus" class="hidden mt-4 p-4 rounded-lg text-sm"></div>
+        </div>
+
         <div class="flex flex-wrap gap-2 mb-4">
           <button type="button" data-report="sales" class="report-dept-btn px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium hover:bg-slate-50">Kinh doanh (Sales)</button>
           <button type="button" data-report="marketing" class="report-dept-btn px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium hover:bg-slate-50">Marketing</button>
@@ -282,6 +295,7 @@
       document.getElementById('userRole').textContent = currentUser.role;
       if (permissions.canEditLeads) document.querySelectorAll('.edit-col').forEach(function (el) { el.classList.remove('hidden'); });
       if (permissions.canEditContent) document.getElementById('saveContentBtn').classList.remove('hidden');
+      if (permissions.canEditContent) document.getElementById('generatePlanPanel').classList.remove('hidden');
       if (permissions.canViewUsers) document.getElementById('usersTabBtn').classList.remove('hidden');
       if (permissions.canManageUsers) {
         document.getElementById('createUserPanel').classList.remove('hidden');
@@ -330,9 +344,120 @@
       active.classList.remove('bg-white', 'border', 'border-slate-300');
       if (name === 'leads') loadLeads();
       if (name === 'users') loadUsers();
+      if (name === 'reports') checkGeneratePlanOnLoad();
     }
 
     var activeReportDepartment = null;
+    var generatePlanPollTimer = null;
+
+    function setGeneratePlanStatus(message, type) {
+      var el = document.getElementById('generatePlanStatus');
+      el.textContent = message;
+      el.className = 'mt-4 p-4 rounded-lg text-sm ' +
+        (type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
+          type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
+            'bg-indigo-50 text-indigo-800 border border-indigo-200');
+      el.classList.remove('hidden');
+    }
+
+    function setGeneratePlanLoading(isLoading) {
+      var btn = document.getElementById('generatePlanBtn');
+      var textarea = document.getElementById('agentMarketContext');
+      btn.disabled = isLoading;
+      textarea.disabled = isLoading;
+      btn.textContent = isLoading ? '⏳ AI Agents đang chạy...' : '🔄 Kích hoạt tạo kế hoạch mới';
+    }
+
+    function stopGeneratePlanPolling() {
+      if (generatePlanPollTimer) {
+        clearInterval(generatePlanPollTimer);
+        generatePlanPollTimer = null;
+      }
+    }
+
+    async function pollGeneratePlanStatus() {
+      try {
+        var res = await apiFetch('/api/generate-plan/status');
+        var status = await res.json();
+        if (status.running) return;
+
+        stopGeneratePlanPolling();
+        setGeneratePlanLoading(false);
+
+        if (status.lastError) {
+          setGeneratePlanStatus('Tạo kế hoạch thất bại: ' + status.lastError, 'error');
+          showToast('AI Agents gặp lỗi khi tạo kế hoạch.', 'error');
+          return;
+        }
+
+        setGeneratePlanStatus('Hoàn tất! Báo cáo mới đã sẵn sàng. Chọn phòng ban bên dưới để xem.', 'success');
+        showToast('Đã tạo kế hoạch mới thành công!', 'success');
+        if (activeReportDepartment) loadReport(activeReportDepartment);
+      } catch (err) {
+        stopGeneratePlanPolling();
+        setGeneratePlanLoading(false);
+        setGeneratePlanStatus('Mất kết nối khi theo dõi tiến trình. Thử Refresh báo cáo sau vài phút.', 'error');
+      }
+    }
+
+    async function generateNewPlan() {
+      var context = document.getElementById('agentMarketContext').value.trim();
+      if (!context) {
+        setGeneratePlanStatus('Vui lòng nhập yêu cầu/bối cảnh thị trường mới trước khi kích hoạt.', 'error');
+        return;
+      }
+
+      stopGeneratePlanPolling();
+      setGeneratePlanLoading(true);
+      setGeneratePlanStatus('AI Agents đang thảo luận và lập kế hoạch mới, vui lòng đợi từ 1-2 phút...', 'info');
+
+      try {
+        var res = await apiFetch('/api/generate-plan', {
+          method: 'POST',
+          body: JSON.stringify({ context: context })
+        });
+        var data = await res.json().catch(function () { return {}; });
+
+        if (res.status === 409) {
+          setGeneratePlanLoading(true);
+          setGeneratePlanStatus(data.message || 'AI Agents đang chạy. Vui lòng đợi...', 'info');
+          generatePlanPollTimer = setInterval(pollGeneratePlanStatus, 8000);
+          return;
+        }
+
+        if (!res.ok) {
+          setGeneratePlanLoading(false);
+          setGeneratePlanStatus(data.message || 'Không kích hoạt được AI Agents.', 'error');
+          showToast(data.message || 'Kích hoạt thất bại.', 'error');
+          return;
+        }
+
+        if (data.mode === 'n8n') {
+          setGeneratePlanLoading(false);
+          setGeneratePlanStatus(data.message || 'Đã gửi yêu cầu tới n8n.', 'success');
+          showToast('Đã kích hoạt workflow n8n.', 'success');
+          return;
+        }
+
+        generatePlanPollTimer = setInterval(pollGeneratePlanStatus, 8000);
+        pollGeneratePlanStatus();
+      } catch (err) {
+        setGeneratePlanLoading(false);
+        setGeneratePlanStatus('Lỗi kết nối server. Vui lòng thử lại.', 'error');
+      }
+    }
+
+    async function checkGeneratePlanOnLoad() {
+      try {
+        var res = await apiFetch('/api/generate-plan/status');
+        if (!res.ok) return;
+        var status = await res.json();
+        if (!status.running) return;
+        setGeneratePlanLoading(true);
+        setGeneratePlanStatus('AI Agents đang thảo luận và lập kế hoạch mới, vui lòng đợi từ 1-2 phút...', 'info');
+        generatePlanPollTimer = setInterval(pollGeneratePlanStatus, 8000);
+      } catch (err) {}
+    }
 
     function setActiveReportButton(department) {
       document.querySelectorAll('.report-dept-btn').forEach(function (btn) {
@@ -604,6 +729,7 @@
     document.querySelectorAll('.report-dept-btn').forEach(function (btn) {
       btn.addEventListener('click', function () { loadReport(btn.getAttribute('data-report')); });
     });
+    document.getElementById('generatePlanBtn').addEventListener('click', generateNewPlan);
     document.getElementById('refreshLeadsBtn').addEventListener('click', loadLeads);
     document.getElementById('saveContentBtn').addEventListener('click', saveContent);
     document.getElementById('closeModalBtn').addEventListener('click', function () {
