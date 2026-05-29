@@ -113,6 +113,7 @@ ${extra}
 
 const FULL_CONTEXT = buildFullContext();
 const AGENT_STATUS_PATH = path.join(__dirname, "agents", ".generation-status.json");
+const CHART_DATA_PATH = path.join(__dirname, "data-chart.json");
 
 function writeJobStatus(patch) {
   const agentsDir = path.join(__dirname, "agents");
@@ -130,6 +131,102 @@ function writeJobStatus(patch) {
     JSON.stringify({ ...current, ...patch, updatedAt: new Date().toISOString() }, null, 2),
     "utf8"
   );
+}
+
+function readChartData() {
+  if (!fs.existsSync(CHART_DATA_PATH)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(CHART_DATA_PATH, "utf8"));
+  } catch (err) {
+    return {};
+  }
+}
+
+function writeChartData(data) {
+  fs.writeFileSync(
+    CHART_DATA_PATH,
+    JSON.stringify({ ...data, updatedAt: new Date().toISOString() }, null, 2),
+    "utf8"
+  );
+}
+
+function parseAgentJson(raw) {
+  const trimmed = String(raw || "").trim();
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const jsonText = fenced ? fenced[1].trim() : trimmed;
+  return JSON.parse(jsonText);
+}
+
+function normalizeMarketingMetrics(raw) {
+  return {
+    target_leads: Math.round(Number(raw.target_leads)),
+    cost_per_lead: Math.round(Number(raw.cost_per_lead))
+  };
+}
+
+function normalizeFinanceMetrics(raw) {
+  const projection = Array.isArray(raw.revenue_projection)
+    ? raw.revenue_projection.map(value => Math.round(Number(value)))
+    : [];
+  if (projection.length !== 3 || projection.some(Number.isNaN)) {
+    throw new Error("revenue_projection phải là mảng 3 số.");
+  }
+  return {
+    revenue_projection: projection,
+    bep: Math.round(Number(raw.bep))
+  };
+}
+
+async function extractKeyMetrics(department, reportMarkdown) {
+  const extractors = {
+    marketing: {
+      system: `Bạn là chuyên gia trích xuất dữ liệu KPI Marketing.
+Chỉ trả về JSON thuần, không markdown, không giải thích.`,
+      prompt: `Đọc báo cáo Marketing Leader dưới đây và trích xuất:
+- target_leads: số leads mục tiêu (số nguyên)
+- cost_per_lead: chi phí trung bình mỗi lead (VND, số nguyên)
+
+Báo cáo:
+---
+${reportMarkdown}
+---
+
+Trả về ĐÚNG định dạng JSON:
+{"target_leads": 80, "cost_per_lead": 250000}`,
+      normalize: normalizeMarketingMetrics
+    },
+    finance: {
+      system: `Bạn là chuyên gia trích xuất dữ liệu tài chính.
+Chỉ trả về JSON thuần, không markdown, không giải thích.`,
+      prompt: `Đọc báo cáo Finance Leader (CFO) dưới đây và trích xuất:
+- revenue_projection: mảng 3 số dự phóng doanh thu theo năm (đơn vị: triệu VND)
+- bep: điểm hòa vốn doanh thu (VND, số nguyên)
+
+Báo cáo:
+---
+${reportMarkdown}
+---
+
+Trả về ĐÚNG định dạng JSON:
+{"revenue_projection": [300, 500, 847], "bep": 847058824}`,
+      normalize: normalizeFinanceMetrics
+    }
+  };
+
+  const config = extractors[department];
+  if (!config) throw new Error(`Không hỗ trợ trích xuất metrics cho: ${department}`);
+
+  const raw = await callGemini(config.system, config.prompt, 0.1);
+  const parsed = parseAgentJson(raw);
+  return config.normalize(parsed);
+}
+
+async function saveDepartmentChartMetrics(department, reportMarkdown) {
+  const metrics = await extractKeyMetrics(department, reportMarkdown);
+  const chartData = readChartData();
+  chartData[department] = metrics;
+  writeChartData(chartData);
+  console.log(`   📊 Đã cập nhật key-metrics ${department} → data-chart.json`);
 }
 
 // ==========================================
@@ -204,6 +301,9 @@ Nhiệm vụ của bạn làm CMO:
 2. Tinh chỉnh các kịch bản social media sao cho chuyên nghiệp, sắc bén và thuyết phục hơn.
 3. Rà soát, chuẩn hóa các Prompts sinh ảnh AI để đảm bảo chất lượng hình ảnh đầu ra (KPIs hình ảnh số: bố cục, màu sắc thương hiệu, tính chuyên nghiệp).
 4. Thiết lập các KPIs đo lường hiệu quả chiến dịch Marketing này (ví dụ: lượt tiếp cận, tỷ lệ click, số leads thu về).
+5. Cuối báo cáo, bắt buộc có mục "## KEY METRICS" nêu rõ:
+   - Target Leads (số leads mục tiêu trong kỳ)
+   - Cost Per Lead (chi phí VND/lead)
 
 Hãy viết báo cáo Marketing chính thức hoàn chỉnh dưới dạng Markdown.`
   },
@@ -247,6 +347,9 @@ Nhiệm vụ của bạn làm CFO:
    - Số lượng hợp đồng tối thiểu của từng gói cước cần đạt để đạt điểm hòa vốn.
 3. Tính toán tỷ suất sinh lời (ROI) dự kiến của dự án đầu tư hệ thống này sau 3 năm.
 4. Đưa ra các khuyến nghị tài chính chiến lược để tối ưu hóa dòng tiền và dự phòng rủi ro.
+5. Cuối báo cáo, bắt buộc có mục "## KEY METRICS" nêu rõ:
+   - Dự phóng doanh thu 3 năm (triệu VND): Năm 1, Năm 2, Năm 3
+   - BEP — Doanh thu hòa vốn (VND)
 
 Hãy viết báo cáo tài chính chính thức hoàn chỉnh dưới dạng Markdown.`
   }
@@ -316,6 +419,8 @@ async function runWorkflow() {
     const reportMarketing = await callGemini(agents.marketingLeader.system, agents.marketingLeader.prompt(draftMarketing), 0.3);
     fs.writeFileSync(path.join(agentsDir, "leader-marketing.md"), reportMarketing, "utf8");
     console.log("   ✅ Đã xuất file: agents/leader-marketing.md");
+    console.log("   📊 Marketing Leader — trích xuất key-metrics...");
+    await saveDepartmentChartMetrics("marketing", reportMarketing);
     console.log("--------------------------------------------------------\n");
 
     // ----------------------------------------------------
@@ -334,11 +439,14 @@ async function runWorkflow() {
     const reportFinance = await callGemini(agents.financeLeader.system, agents.financeLeader.prompt(draftFinance), 0.2);
     fs.writeFileSync(path.join(agentsDir, "leader-finance.md"), reportFinance, "utf8");
     console.log("   ✅ Đã xuất file: agents/leader-finance.md");
+    console.log("   📊 Finance Leader — trích xuất key-metrics...");
+    await saveDepartmentChartMetrics("finance", reportFinance);
 
     fs.writeFileSync(path.join(__dirname, "report-sales.md"), reportSales, "utf8");
     fs.writeFileSync(path.join(__dirname, "report-marketing.md"), reportMarketing, "utf8");
     fs.writeFileSync(path.join(__dirname, "report-finance.md"), reportFinance, "utf8");
     console.log("   ✅ Đã xuất file: report-sales.md, report-marketing.md, report-finance.md");
+    console.log("   ✅ Đã cập nhật: data-chart.json");
     console.log("--------------------------------------------------------\n");
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -371,4 +479,4 @@ if (require.main === module) {
   runWorkflow();
 }
 
-module.exports = { runWorkflow };
+module.exports = { runWorkflow, extractKeyMetrics, saveDepartmentChartMetrics };
