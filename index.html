@@ -39,7 +39,7 @@
     <nav class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <a href="#" class="flex items-center gap-2 font-bold text-brand-900">
         <span class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center text-white text-sm">DX</span>
-        <span class="hidden sm:inline">Digital SME</span>
+        <span class="hidden sm:inline" data-cms="siteName">Digital SME</span>
       </a>
       <div class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
         <a href="#pain" class="hover:text-brand-600 transition">Nỗi đau SME</a>
@@ -64,35 +64,35 @@
         <div>
           <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-100 text-brand-700 text-xs font-semibold uppercase tracking-wide mb-6">
             <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-            Dành riêng cho doanh nghiệp SME
+            <span data-cms="heroBadge">Dành riêng cho doanh nghiệp SME</span>
           </span>
           <h1 class="text-4xl sm:text-5xl lg:text-[3.25rem] font-extrabold text-brand-900 leading-tight tracking-tight">
-            Kiến trúc hệ thống vững —<br />
-            <span class="bg-gradient-to-r from-brand-600 to-indigo-600 bg-clip-text text-transparent">Chuyển đổi số bền vững</span>
+            <span data-cms="heroTitle">Kiến trúc hệ thống vững —</span><br />
+            <span class="bg-gradient-to-r from-brand-600 to-indigo-600 bg-clip-text text-transparent" data-cms="heroTitleHighlight">Chuyển đổi số bền vững</span>
           </h1>
-          <p class="mt-6 text-lg text-slate-600 leading-relaxed max-w-xl">
+          <p class="mt-6 text-lg text-slate-600 leading-relaxed max-w-xl" data-cms="heroDescription">
             Tư vấn chiến lược &amp; thiết kế kiến trúc CNTT giúp SME thoát khỏi quản lý thủ công, làm chủ dòng dữ liệu và mở rộng quy mô an toàn — không cần đội ngũ IT khổng lồ.
           </p>
           <div class="mt-10 flex flex-col sm:flex-row gap-4">
-            <a href="#register" class="inline-flex justify-center items-center px-6 py-3.5 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition shadow-lg shadow-brand-500/25">
+            <a href="#register" class="inline-flex justify-center items-center px-6 py-3.5 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition shadow-lg shadow-brand-500/25" data-cms="heroCtaPrimary">
               Đặt lịch tư vấn 30 phút miễn phí
             </a>
-            <a href="#solutions" class="inline-flex justify-center items-center px-6 py-3.5 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold hover:border-brand-300 hover:text-brand-700 transition">
+            <a href="#solutions" class="inline-flex justify-center items-center px-6 py-3.5 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold hover:border-brand-300 hover:text-brand-700 transition" data-cms="heroCtaSecondary">
               Xem giải pháp
             </a>
           </div>
           <dl class="mt-12 grid grid-cols-3 gap-6 max-w-md">
             <div>
-              <dt class="text-2xl font-bold text-brand-900">50+</dt>
-              <dd class="text-xs text-slate-500 mt-1">Dự án SME</dd>
+              <dt class="text-2xl font-bold text-brand-900" data-cms="statProjects">50+</dt>
+              <dd class="text-xs text-slate-500 mt-1" data-cms="statProjectsLabel">Dự án SME</dd>
             </div>
             <div>
-              <dt class="text-2xl font-bold text-brand-900">30'</dt>
-              <dd class="text-xs text-slate-500 mt-1">Buổi tư vấn đầu</dd>
+              <dt class="text-2xl font-bold text-brand-900" data-cms="statDuration">30'</dt>
+              <dd class="text-xs text-slate-500 mt-1" data-cms="statDurationLabel">Buổi tư vấn đầu</dd>
             </div>
             <div>
-              <dt class="text-2xl font-bold text-brand-900">0đ</dt>
-              <dd class="text-xs text-slate-500 mt-1">Phí buổi đầu</dd>
+              <dt class="text-2xl font-bold text-brand-900" data-cms="statPrice">0đ</dt>
+              <dd class="text-xs text-slate-500 mt-1" data-cms="statPriceLabel">Phí buổi đầu</dd>
             </div>
           </dl>
         </div>
@@ -128,8 +128,8 @@
   <section id="pain" class="py-20 sm:py-24 bg-white">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center max-w-3xl mx-auto">
-        <h2 class="text-3xl sm:text-4xl font-bold text-brand-900">Nỗi đau của SME</h2>
-        <p class="mt-4 text-slate-600 leading-relaxed">
+        <h2 class="text-3xl sm:text-4xl font-bold text-brand-900" data-cms="painTitle">Nỗi đau của SME</h2>
+        <p class="mt-4 text-slate-600 leading-relaxed" data-cms="painIntro">
           Khi doanh nghiệp vượt quy mô “chạy bằng kinh nghiệm”, chi phí ẩn lớn nhất không phải phần mềm — mà là <strong class="text-brand-900">dữ liệu không nói cùng một ngôn ngữ</strong> giữa các phòng ban, khiến lãnh đạo quyết định muộn và sai lệch.
         </p>
       </div>
@@ -197,8 +197,8 @@
   <section id="solutions" class="py-20 sm:py-24 bg-gradient-to-b from-slate-100 to-slate-50">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center max-w-2xl mx-auto">
-        <h2 class="text-3xl sm:text-4xl font-bold text-brand-900">Giải pháp tư vấn</h2>
-        <p class="mt-4 text-slate-600">Gói tư vấn thực chiến — từ đánh giá hiện trạng đến blueprint kiến trúc có thể triển khai ngay với đối tác hoặc đội nội bộ.</p>
+        <h2 class="text-3xl sm:text-4xl font-bold text-brand-900" data-cms="solutionsTitle">Giải pháp tư vấn</h2>
+        <p class="mt-4 text-slate-600" data-cms="solutionsIntro">Gói tư vấn thực chiến — từ đánh giá hiện trạng đến blueprint kiến trúc có thể triển khai ngay với đối tác hoặc đội nội bộ.</p>
       </div>
       <div class="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition">
@@ -246,8 +246,8 @@
         </div>
         <div class="lg:col-span-3">
           <span class="text-sm font-semibold text-brand-600 uppercase tracking-wide">Về chuyên gia tư vấn</span>
-          <h2 class="mt-2 text-3xl sm:text-4xl font-bold text-brand-900">Kết hợp chiều sâu kỹ thuật &amp; tư duy điều hành</h2>
-          <p class="mt-4 text-slate-600 leading-relaxed">
+          <h2 class="mt-2 text-3xl sm:text-4xl font-bold text-brand-900" data-cms="expertTitle">Kết hợp chiều sâu kỹ thuật &amp; tư duy điều hành</h2>
+          <p class="mt-4 text-slate-600 leading-relaxed" data-cms="expertDescription">
             Tôi làm việc với SME ở giao điểm <strong class="text-brand-900">kiến trúc hệ thống</strong> và <strong class="text-brand-900">chiến lược vận hành</strong> — không chỉ vẽ sơ đồ đẹp mà đảm bảo lộ trình chuyển đổi số khả thi với nguồn lực và ngân sách thực tế của doanh nghiệp vừa và nhỏ.
           </p>
           <div class="mt-8 grid sm:grid-cols-3 gap-4">
@@ -267,7 +267,7 @@
               <p class="mt-2 text-xs text-slate-500 leading-relaxed">Tư duy chiến lược, tài chính doanh nghiệp và quản trị thay đổi theo chuẩn quốc tế.</p>
             </div>
           </div>
-          <p class="mt-6 text-sm text-slate-500 italic">
+          <p class="mt-6 text-sm text-slate-500 italic" data-cms="expertQuote">
             “Mục tiêu của tôi: giúp bạn có một kiến trúc dữ liệu mà ban lãnh đạo tin được — trước khi bỏ ngân sách vào phần mềm mới.”
           </p>
         </div>
@@ -279,7 +279,7 @@
   <section id="register" class="py-20 sm:py-24 bg-gradient-to-b from-slate-50 to-white">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center max-w-2xl mx-auto">
-        <h2 class="text-3xl sm:text-4xl font-bold text-brand-900">Đăng ký tư vấn 30 phút miễn phí</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-brand-900" data-cms="registerTitle">Đăng ký tư vấn 30 phút miễn phí</h2>
         <p id="register-description" class="mt-4 text-slate-600 leading-relaxed"></p>
       </div>
 
@@ -379,16 +379,46 @@
   <!-- Footer -->
   <footer class="py-10 border-t border-slate-200 bg-slate-50">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-slate-500">
-      <p>&copy; 2026 Digital SME — Tư vấn Kiến trúc Hệ thống &amp; Chuyển đổi số</p>
-      <p>Liên hệ: <a href="mailto:hello@digitalsme.vn" class="text-brand-600 hover:underline">hello@digitalsme.vn</a></p>
+      <p data-cms="footerText">&copy; 2026 Digital SME — Tư vấn Kiến trúc Hệ thống &amp; Chuyển đổi số</p>
+      <p>Liên hệ: <a href="mailto:hello@digitalsme.vn" class="text-brand-600 hover:underline" data-cms="contactEmail" data-cms-attr="href:mailto:">hello@digitalsme.vn</a></p>
     </div>
   </footer>
 
   <script>
     (function () {
+      fetch('/api/content').then(function (res) { return res.json(); }).then(function (content) {
+        document.querySelectorAll('[data-cms]').forEach(function (el) {
+          var key = el.getAttribute('data-cms');
+          if (!content[key]) return;
+          var attrRule = el.getAttribute('data-cms-attr');
+          if (attrRule) {
+            var parts = attrRule.split(':');
+            el.setAttribute(parts[0], parts[1] + content[key]);
+            if (el.tagName === 'A' && !attrRule) el.textContent = content[key];
+          } else {
+            el.textContent = content[key];
+          }
+        });
+        window.__CMS_CONTENT__ = content;
+        if (typeof window.applyCmsToBooking === 'function') window.applyCmsToBooking(content);
+      }).catch(function () {});
+    })();
+  </script>
+  <script>
+    (function () {
       // true: form test nhanh, false: Calendly production
       var TEST_MODE = false;
       var CALENDLY_URL = 'https://calendly.com/masterai052026';
+
+      window.applyCmsToBooking = function (content) {
+        if (content.calendlyUrl) CALENDLY_URL = content.calendlyUrl;
+        if (content.registerDescription) {
+          var registerDescription = document.getElementById('register-description');
+          if (registerDescription) registerDescription.textContent = content.registerDescription;
+        }
+        var widget = document.querySelector('.calendly-inline-widget');
+        if (widget) widget.setAttribute('data-url', CALENDLY_URL);
+      };
 
       var registerDescription = document.getElementById('register-description');
       var helperText = document.getElementById('register-helper-text');

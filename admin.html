@@ -3,77 +3,310 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quản lý Lead tư vấn</title>
+  <title>Admin — Digital SME</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-800">
-  <main class="max-w-6xl mx-auto px-4 py-10">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold">Quản lý Lead từ Landing Page</h1>
-      <button id="refreshBtn" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">Refresh</button>
-    </div>
+  <div id="authGate" class="min-h-screen flex items-center justify-center">
+    <p class="text-slate-500">Đang kiểm tra phiên đăng nhập...</p>
+  </div>
 
-    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="bg-slate-100 text-slate-700">
-            <tr>
-              <th class="px-4 py-3 text-left">ID</th>
-              <th class="px-4 py-3 text-left">Họ tên</th>
-              <th class="px-4 py-3 text-left">Email</th>
-              <th class="px-4 py-3 text-left">Doanh nghiệp</th>
-              <th class="px-4 py-3 text-left">Điện thoại</th>
-              <th class="px-4 py-3 text-left">Khung giờ</th>
-              <th class="px-4 py-3 text-left">Nguồn</th>
-              <th class="px-4 py-3 text-left">Tạo lúc</th>
-              <th class="px-4 py-3 text-left">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody id="leadTableBody"></tbody>
-        </table>
+  <div id="adminApp" class="hidden">
+    <header class="bg-white border-b border-slate-200">
+      <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 class="text-xl font-bold">Digital SME Admin</h1>
+          <p class="text-sm text-slate-500">Xin chào, <span id="userDisplayName"></span> · Quyền: <span id="userRole" class="font-semibold uppercase"></span></p>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="/" target="_blank" class="text-sm text-blue-600 hover:underline">Xem website</a>
+          <button id="logoutBtn" class="px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 text-sm">Đăng xuất</button>
+        </div>
       </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+      <div class="flex gap-2 mb-6">
+        <button data-tab="leads" class="tab-btn px-4 py-2 rounded-lg bg-blue-600 text-white font-medium">Khách hàng (Leads)</button>
+        <button data-tab="content" class="tab-btn px-4 py-2 rounded-lg bg-white border border-slate-300 font-medium">Nội dung Frontend</button>
+        <button data-tab="users" id="usersTabBtn" class="tab-btn px-4 py-2 rounded-lg bg-white border border-slate-300 font-medium hidden">Tài khoản</button>
+      </div>
+
+      <section id="tab-leads" class="tab-panel">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold">Danh sách khách hàng đăng ký tư vấn</h2>
+          <button id="refreshLeadsBtn" class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold">Refresh</button>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-slate-100">
+                <tr>
+                  <th class="px-4 py-3 text-left">ID</th>
+                  <th class="px-4 py-3 text-left">Họ tên</th>
+                  <th class="px-4 py-3 text-left">Email</th>
+                  <th class="px-4 py-3 text-left">Doanh nghiệp</th>
+                  <th class="px-4 py-3 text-left">Điện thoại</th>
+                  <th class="px-4 py-3 text-left">Khung giờ</th>
+                  <th class="px-4 py-3 text-left">Nguồn</th>
+                  <th class="px-4 py-3 text-left">Tạo lúc</th>
+                  <th class="px-4 py-3 text-left edit-col hidden">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="leadTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-content" class="tab-panel hidden">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold">Cập nhật nội dung hiển thị trên Frontend</h2>
+          <button id="saveContentBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hidden">Lưu thay đổi</button>
+        </div>
+        <form id="contentForm" class="grid md:grid-cols-2 gap-4"></form>
+        <p id="contentMessage" class="mt-4 text-sm hidden"></p>
+      </section>
+
+      <section id="tab-users" class="tab-panel hidden">
+        <h2 class="text-lg font-bold mb-4">Danh sách tài khoản quản trị</h2>
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <table class="min-w-full text-sm">
+            <thead class="bg-slate-100">
+              <tr>
+                <th class="px-4 py-3 text-left">ID</th>
+                <th class="px-4 py-3 text-left">Username</th>
+                <th class="px-4 py-3 text-left">Tên hiển thị</th>
+                <th class="px-4 py-3 text-left">Quyền</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody"></tbody>
+          </table>
+        </div>
+        <div class="mt-4 p-4 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
+          <strong>Phân quyền:</strong> viewer (chỉ xem lead) · editor (xem/sửa/xóa lead + sửa nội dung) · admin (toàn quyền)
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="editModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl w-full max-w-lg p-6">
+      <h3 class="text-lg font-bold mb-4">Sửa thông tin lead</h3>
+      <form id="editLeadForm" class="space-y-3">
+        <input type="hidden" id="editLeadId" />
+        <input id="editFullName" class="w-full px-3 py-2 border rounded-lg" placeholder="Họ tên" required />
+        <input id="editWorkEmail" class="w-full px-3 py-2 border rounded-lg" placeholder="Email" required />
+        <input id="editCompanyName" class="w-full px-3 py-2 border rounded-lg" placeholder="Doanh nghiệp" />
+        <input id="editPhoneNumber" class="w-full px-3 py-2 border rounded-lg" placeholder="Điện thoại" />
+        <input id="editPreferredTime" class="w-full px-3 py-2 border rounded-lg" placeholder="Khung giờ" />
+        <div class="flex gap-2 pt-2">
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Lưu</button>
+          <button type="button" id="closeModalBtn" class="px-4 py-2 border rounded-lg">Hủy</button>
+        </div>
+      </form>
     </div>
-  </main>
+  </div>
 
   <script>
-    async function loadLeads() {
-      const body = document.getElementById('leadTableBody');
-      body.innerHTML = '<tr><td class="px-4 py-4" colspan="9">Đang tải...</td></tr>';
-      try {
-        const response = await fetch('/api/leads');
-        const leads = await response.json();
+    var currentUser = null;
+    var permissions = null;
+    var contentData = {};
 
-        if (!Array.isArray(leads) || leads.length === 0) {
-          body.innerHTML = '<tr><td class="px-4 py-4" colspan="9">Chưa có lead nào.</td></tr>';
-          return;
-        }
+    function authHeaders() {
+      var token = localStorage.getItem('authToken');
+      return token ? { Authorization: 'Bearer ' + token } : {};
+    }
 
-        body.innerHTML = leads.map(function (lead) {
-          return '<tr class="border-t border-slate-100">' +
-            '<td class="px-4 py-3">' + lead.id + '</td>' +
-            '<td class="px-4 py-3">' + (lead.full_name || '') + '</td>' +
-            '<td class="px-4 py-3">' + (lead.work_email || '') + '</td>' +
-            '<td class="px-4 py-3">' + (lead.company_name || '') + '</td>' +
-            '<td class="px-4 py-3">' + (lead.phone_number || '') + '</td>' +
-            '<td class="px-4 py-3">' + (lead.preferred_time || '') + '</td>' +
-            '<td class="px-4 py-3">' + (lead.source || '') + '</td>' +
-            '<td class="px-4 py-3">' + (lead.created_at || '') + '</td>' +
-            '<td class="px-4 py-3"><button class="text-red-600 hover:underline" onclick="deleteLead(' + lead.id + ')">Xóa</button></td>' +
-          '</tr>';
-        }).join('');
-      } catch (err) {
-        body.innerHTML = '<tr><td class="px-4 py-4 text-red-600" colspan="9">Không tải được dữ liệu.</td></tr>';
+    async function apiFetch(url, options) {
+      options = options || {};
+      options.headers = Object.assign({ 'Content-Type': 'application/json' }, authHeaders(), options.headers || {});
+      return fetch(url, options);
+    }
+
+    async function initAuth() {
+      var res = await apiFetch('/api/auth/me');
+      if (!res.ok) {
+        window.location.href = '/login.html';
+        return;
       }
-    }
-
-    async function deleteLead(id) {
-      if (!confirm('Xóa lead #' + id + '?')) return;
-      await fetch('/api/leads/' + id, { method: 'DELETE' });
+      var data = await res.json();
+      currentUser = data.user;
+      permissions = data.permissions;
+      document.getElementById('authGate').classList.add('hidden');
+      document.getElementById('adminApp').classList.remove('hidden');
+      document.getElementById('userDisplayName').textContent = currentUser.displayName;
+      document.getElementById('userRole').textContent = currentUser.role;
+      if (permissions.canEditLeads) document.querySelectorAll('.edit-col').forEach(function (el) { el.classList.remove('hidden'); });
+      if (permissions.canEditContent) document.getElementById('saveContentBtn').classList.remove('hidden');
+      if (permissions.canViewUsers) document.getElementById('usersTabBtn').classList.remove('hidden');
       loadLeads();
+      loadContentForm();
     }
 
-    document.getElementById('refreshBtn').addEventListener('click', loadLeads);
-    loadLeads();
+    function switchTab(name) {
+      document.querySelectorAll('.tab-panel').forEach(function (el) { el.classList.add('hidden'); });
+      document.getElementById('tab-' + name).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(function (btn) {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('bg-white', 'border', 'border-slate-300');
+      });
+      var active = document.querySelector('[data-tab="' + name + '"]');
+      active.classList.add('bg-blue-600', 'text-white');
+      active.classList.remove('bg-white', 'border', 'border-slate-300');
+      if (name === 'users') loadUsers();
+    }
+
+    async function loadLeads() {
+      var body = document.getElementById('leadTableBody');
+      body.innerHTML = '<tr><td colspan="9" class="px-4 py-4">Đang tải...</td></tr>';
+      var res = await apiFetch('/api/leads');
+      if (!res.ok) {
+        body.innerHTML = '<tr><td colspan="9" class="px-4 py-4 text-red-600">Không tải được dữ liệu.</td></tr>';
+        return;
+      }
+      var leads = await res.json();
+      if (!leads.length) {
+        body.innerHTML = '<tr><td colspan="9" class="px-4 py-4">Chưa có lead nào.</td></tr>';
+        return;
+      }
+      body.innerHTML = leads.map(function (lead) {
+        var actions = permissions.canEditLeads
+          ? '<button class="text-blue-600 hover:underline mr-2" onclick="openEditModal(' + lead.id + ')">Sửa</button>' +
+            '<button class="text-red-600 hover:underline" onclick="deleteLead(' + lead.id + ')">Xóa</button>'
+          : '<span class="text-slate-400">Chỉ xem</span>';
+        return '<tr class="border-t">' +
+          '<td class="px-4 py-3">' + lead.id + '</td>' +
+          '<td class="px-4 py-3">' + lead.full_name + '</td>' +
+          '<td class="px-4 py-3">' + lead.work_email + '</td>' +
+          '<td class="px-4 py-3">' + (lead.company_name || '') + '</td>' +
+          '<td class="px-4 py-3">' + (lead.phone_number || '') + '</td>' +
+          '<td class="px-4 py-3">' + (lead.preferred_time || '') + '</td>' +
+          '<td class="px-4 py-3">' + (lead.source || '') + '</td>' +
+          '<td class="px-4 py-3">' + (lead.created_at || '') + '</td>' +
+          '<td class="px-4 py-3 edit-col ' + (permissions.canEditLeads ? '' : 'hidden') + '">' + actions + '</td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    window.openEditModal = async function (id) {
+      var res = await apiFetch('/api/leads/' + id);
+      var lead = await res.json();
+      document.getElementById('editLeadId').value = lead.id;
+      document.getElementById('editFullName').value = lead.full_name;
+      document.getElementById('editWorkEmail').value = lead.work_email;
+      document.getElementById('editCompanyName').value = lead.company_name || '';
+      document.getElementById('editPhoneNumber').value = lead.phone_number || '';
+      document.getElementById('editPreferredTime').value = lead.preferred_time || '';
+      document.getElementById('editModal').classList.remove('hidden');
+    };
+
+    window.deleteLead = async function (id) {
+      if (!confirm('Xóa lead #' + id + '?')) return;
+      await apiFetch('/api/leads/' + id, { method: 'DELETE' });
+      loadLeads();
+    };
+
+    var contentFields = [
+      ['siteName', 'Tên website'],
+      ['heroBadge', 'Hero badge'],
+      ['heroTitle', 'Hero tiêu đề dòng 1'],
+      ['heroTitleHighlight', 'Hero tiêu đề highlight'],
+      ['heroDescription', 'Hero mô tả'],
+      ['heroCtaPrimary', 'Nút CTA chính'],
+      ['heroCtaSecondary', 'Nút CTA phụ'],
+      ['statProjects', 'Số liệu dự án'],
+      ['statProjectsLabel', 'Nhãn dự án'],
+      ['statDuration', 'Số liệu thời lượng'],
+      ['statDurationLabel', 'Nhãn thời lượng'],
+      ['statPrice', 'Số liệu phí'],
+      ['statPriceLabel', 'Nhãn phí'],
+      ['painTitle', 'Tiêu đề Nỗi đau SME'],
+      ['painIntro', 'Mô tả Nỗi đau SME'],
+      ['solutionsTitle', 'Tiêu đề Giải pháp'],
+      ['solutionsIntro', 'Mô tả Giải pháp'],
+      ['expertTitle', 'Tiêu đề Chuyên gia'],
+      ['expertDescription', 'Mô tả Chuyên gia'],
+      ['expertQuote', 'Trích dẫn Chuyên gia'],
+      ['registerTitle', 'Tiêu đề Đăng ký'],
+      ['registerDescription', 'Mô tả Đăng ký'],
+      ['calendlyUrl', 'Link Calendly'],
+      ['contactEmail', 'Email liên hệ'],
+      ['footerText', 'Footer']
+    ];
+
+    async function loadContentForm() {
+      var res = await fetch('/api/content');
+      contentData = await res.json();
+      var form = document.getElementById('contentForm');
+      form.innerHTML = contentFields.map(function (item) {
+        var key = item[0];
+        var label = item[1];
+        var val = contentData[key] || '';
+        var isLong = val.length > 80 || key.indexOf('Description') > -1 || key.indexOf('Intro') > -1 || key === 'expertQuote';
+        if (isLong) {
+          return '<div class="md:col-span-2"><label class="block text-sm font-medium mb-1">' + label + '</label><textarea data-key="' + key + '" rows="3" class="w-full px-3 py-2 border rounded-lg"' + (permissions.canEditContent ? '' : ' readonly') + '>' + val + '</textarea></div>';
+        }
+        return '<div><label class="block text-sm font-medium mb-1">' + label + '</label><input data-key="' + key + '" value="' + val.replace(/"/g, '&quot;') + '" class="w-full px-3 py-2 border rounded-lg"' + (permissions.canEditContent ? '' : ' readonly') + ' /></div>';
+      }).join('');
+    }
+
+    async function saveContent() {
+      var payload = {};
+      document.querySelectorAll('#contentForm [data-key]').forEach(function (el) {
+        payload[el.getAttribute('data-key')] = el.value;
+      });
+      var res = await apiFetch('/api/content', { method: 'PUT', body: JSON.stringify(payload) });
+      var msg = document.getElementById('contentMessage');
+      if (res.ok) {
+        msg.textContent = 'Đã lưu nội dung. Refresh trang chủ để xem thay đổi.';
+        msg.className = 'mt-4 text-sm text-emerald-700';
+      } else {
+        msg.textContent = 'Lưu thất bại. Kiểm tra quyền editor/admin.';
+        msg.className = 'mt-4 text-sm text-red-600';
+      }
+      msg.classList.remove('hidden');
+    }
+
+    async function loadUsers() {
+      var res = await apiFetch('/api/users');
+      var users = await res.json();
+      document.getElementById('userTableBody').innerHTML = users.map(function (u) {
+        return '<tr class="border-t"><td class="px-4 py-3">' + u.id + '</td><td class="px-4 py-3">' + u.username + '</td><td class="px-4 py-3">' + u.displayName + '</td><td class="px-4 py-3 uppercase font-semibold">' + u.role + '</td></tr>';
+      }).join('');
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { switchTab(btn.getAttribute('data-tab')); });
+    });
+    document.getElementById('refreshLeadsBtn').addEventListener('click', loadLeads);
+    document.getElementById('saveContentBtn').addEventListener('click', saveContent);
+    document.getElementById('closeModalBtn').addEventListener('click', function () {
+      document.getElementById('editModal').classList.add('hidden');
+    });
+    document.getElementById('editLeadForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var id = document.getElementById('editLeadId').value;
+      await apiFetch('/api/leads/' + id, {
+        method: 'PUT',
+        body: JSON.stringify({
+          fullName: document.getElementById('editFullName').value,
+          workEmail: document.getElementById('editWorkEmail').value,
+          companyName: document.getElementById('editCompanyName').value,
+          phoneNumber: document.getElementById('editPhoneNumber').value,
+          preferredTime: document.getElementById('editPreferredTime').value
+        })
+      });
+      document.getElementById('editModal').classList.add('hidden');
+      loadLeads();
+    });
+    document.getElementById('logoutBtn').addEventListener('click', async function () {
+      await apiFetch('/api/auth/logout', { method: 'POST' });
+      localStorage.removeItem('authToken');
+      window.location.href = '/login.html';
+    });
+
+    initAuth();
   </script>
 </body>
 </html>
