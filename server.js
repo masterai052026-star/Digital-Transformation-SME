@@ -335,7 +335,10 @@ const NOTION_PROPERTY_ALIASES = {
 function getNotionClient() {
   const apiKey = process.env.NOTION_API_KEY;
   if (!apiKey) return null;
-  return new Client({ auth: apiKey });
+  return new Client({
+    auth: apiKey,
+    notionVersion: "2025-09-03"
+  });
 }
 
 function extractNotionText(property) {
@@ -424,6 +427,17 @@ function parseNotionLead(page, index) {
   };
 }
 
+async function resolveNotionDataSourceId(notion, databaseId) {
+  const database = await notion.databases.retrieve({ database_id: databaseId });
+  const sources = database.data_sources || [];
+  if (!sources.length) {
+    const err = new Error("Notion Database không có data source để truy vấn.");
+    err.code = "NOTION_NO_DATA_SOURCE";
+    throw err;
+  }
+  return sources[0].id;
+}
+
 async function fetchNotionLeads() {
   const databaseId = normalizeNotionDatabaseId(process.env.NOTION_DATABASE_ID);
   const notion = getNotionClient();
@@ -434,12 +448,13 @@ async function fetchNotionLeads() {
     throw err;
   }
 
+  const dataSourceId = await resolveNotionDataSourceId(notion, databaseId);
   const leads = [];
   let cursor;
 
   do {
-    const response = await notion.databases.query({
-      database_id: databaseId,
+    const response = await notion.dataSources.query({
+      data_source_id: dataSourceId,
       start_cursor: cursor,
       sorts: [{ timestamp: "created_time", direction: "descending" }]
     });
