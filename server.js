@@ -128,9 +128,7 @@ function resolveBootstrapPassword(role) {
   if (fromEnv) return fromEnv;
 
   if (process.env.NODE_ENV === "production") {
-    const err = new Error(`Thiếu biến môi trường ${envKeys[role]} cho lần khởi tạo dữ liệu đầu tiên trên production.`);
-    err.code = "BOOTSTRAP_PASSWORD_MISSING";
-    throw err;
+    return crypto.randomBytes(24).toString("base64url");
   }
 
   const devDefaults = {
@@ -183,14 +181,9 @@ function createDefaultData() {
 
 function ensureDataFile() {
   if (!fs.existsSync(DATA_PATH)) {
-    try {
-      fs.writeFileSync(DATA_PATH, JSON.stringify(createDefaultData(), null, 2), "utf8");
-    } catch (err) {
-      if (err.code === "BOOTSTRAP_PASSWORD_MISSING") {
-        console.error(err.message);
-        process.exit(1);
-      }
-      throw err;
+    fs.writeFileSync(DATA_PATH, JSON.stringify(createDefaultData(), null, 2), "utf8");
+    if (process.env.NODE_ENV === "production" && !process.env.ADMIN_INITIAL_PASSWORD) {
+      console.warn("Bootstrap data created. Set ADMIN_INITIAL_PASSWORD on Render before the next fresh deploy to control the admin password.");
     }
   }
 }
