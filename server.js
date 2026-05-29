@@ -45,6 +45,65 @@ const DEFAULT_CONTENT = {
   footerText: "© 2026 Digital SME — Tư vấn Kiến trúc Hệ thống & Chuyển đổi số"
 };
 
+const CONTENT_RULES = {
+  siteName: { max: 30, hint: "Tên ngắn trên menu. Khuyến nghị ≤ 20 ký tự." },
+  heroBadge: { max: 55, hint: "Nhãn nhỏ phía trên tiêu đề. Giữ trong 1 dòng." },
+  heroTitle: { max: 45, hint: "Dòng tiêu đề chính. Tránh quá dài — dễ xuống 2-3 dòng trên mobile." },
+  heroTitleHighlight: { max: 35, hint: "Cụm từ nổi bật (gradient). Nên 3-6 từ." },
+  heroDescription: { max: 220, hint: "Mô tả hero: 2-3 câu. Quá dài sẽ đẩy nút CTA xuống." },
+  heroCtaPrimary: { max: 42, hint: "Text nút chính. Ngắn gọn, ≤ 35 ký tự." },
+  heroCtaSecondary: { max: 25, hint: "Text nút phụ. 2-4 từ." },
+  statProjects: { max: 10, hint: "Số liệu ngắn. VD: 50+, 100+" },
+  statProjectsLabel: { max: 22, hint: "Nhãn dưới số liệu. 2-4 từ." },
+  statDuration: { max: 10, hint: "VD: 30', 45 phút" },
+  statDurationLabel: { max: 22, hint: "Nhãn thời lượng." },
+  statPrice: { max: 10, hint: "VD: 0đ, Miễn phí" },
+  statPriceLabel: { max: 22, hint: "Nhãn phí." },
+  painTitle: { max: 40, hint: "Tiêu đề section. 3-6 từ." },
+  painIntro: { max: 280, hint: "Đoạn mở đầu section. Tối đa ~2-3 câu." },
+  solutionsTitle: { max: 40, hint: "Tiêu đề section giải pháp." },
+  solutionsIntro: { max: 200, hint: "Mô tả ngắn dưới tiêu đề." },
+  expertTitle: { max: 55, hint: "Tiêu đề chuyên gia. Tránh quá 2 dòng." },
+  expertDescription: { max: 320, hint: "Mô tả profile. 3-4 câu là hợp lý." },
+  expertQuote: { max: 180, hint: "Trích dẫn ngắn, 1-2 câu." },
+  registerTitle: { max: 45, hint: "Tiêu đề form đặt lịch." },
+  registerDescription: { max: 160, hint: "Mô tả ngắn dưới tiêu đề đăng ký." },
+  calendlyUrl: { max: 200, hint: "URL đầy đủ bắt đầu bằng https://", type: "url" },
+  contactEmail: { max: 80, hint: "Email hợp lệ. VD: hello@congty.vn", type: "email" },
+  footerText: { max: 90, hint: "Dòng copyright footer. 1 dòng." }
+};
+
+function validateContent(body) {
+  const errors = [];
+  const sanitized = {};
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const urlPattern = /^https:\/\/.+/i;
+
+  Object.keys(CONTENT_RULES).forEach(key => {
+    const rule = CONTENT_RULES[key];
+    const raw = body[key];
+    if (raw === undefined || raw === null) return;
+    const value = String(raw).trim();
+    if (!value) {
+      errors.push({ field: key, message: "Không được để trống." });
+      return;
+    }
+    if (value.length > rule.max) {
+      errors.push({ field: key, message: `Vượt quá ${rule.max} ký tự (hiện ${value.length}).` });
+    }
+    if (rule.type === "email" && !emailPattern.test(value)) {
+      errors.push({ field: key, message: "Email không đúng định dạng." });
+    }
+    if (rule.type === "url" && !urlPattern.test(value)) {
+      errors.push({ field: key, message: "URL phải bắt đầu bằng https://" });
+    }
+    sanitized[key] = value;
+  });
+
+  if (errors.length) return { ok: false, errors };
+  return { ok: true, content: sanitized };
+}
+
 function hashPassword(password, salt) {
   return crypto.scryptSync(password, salt, 64).toString("hex");
 }
@@ -93,6 +152,7 @@ function createDefaultData() {
       }
     ],
     content: { ...DEFAULT_CONTENT },
+    lastUserId: 3,
     updatedAt: new Date().toISOString()
   };
 }
@@ -109,6 +169,7 @@ async function readData() {
   const data = JSON.parse(raw);
   if (!data.users) data.users = createDefaultData().users;
   if (!data.content) data.content = { ...DEFAULT_CONTENT };
+  if (!data.lastUserId) data.lastUserId = Math.max(0, ...data.users.map(u => u.id));
   return data;
 }
 
@@ -166,7 +227,7 @@ function hasPermission(role, action) {
   const matrix = {
     viewer: ["leads.read", "content.read"],
     editor: ["leads.read", "leads.write", "content.read", "content.write"],
-    admin: ["leads.read", "leads.write", "content.read", "content.write", "users.read"]
+    admin: ["leads.read", "leads.write", "content.read", "content.write", "users.read", "users.write"]
   };
   return (matrix[role] || []).includes(action);
 }
@@ -312,9 +373,15 @@ const server = http.createServer(async (req, res) => {
         canViewLeads: hasPermission(session.role, "leads.read"),
         canEditLeads: hasPermission(session.role, "leads.write"),
         canEditContent: hasPermission(session.role, "content.write"),
-        canViewUsers: hasPermission(session.role, "users.read")
+        canViewUsers: hasPermission(session.role, "users.read"),
+        canManageUsers: hasPermission(session.role, "users.write")
       }
     });
+    return;
+  }
+
+  if (req.method === "GET" && pathname === "/api/content/rules") {
+    sendJson(res, 200, CONTENT_RULES);
     return;
   }
 
@@ -323,10 +390,15 @@ const server = http.createServer(async (req, res) => {
     if (!session) return;
     try {
       const body = await parseBody(req);
+      const validation = validateContent(body);
+      if (!validation.ok) {
+        sendJson(res, 400, { message: "Dữ liệu không hợp lệ.", errors: validation.errors });
+        return;
+      }
       const data = await readData();
-      data.content = { ...data.content, ...body };
+      data.content = { ...data.content, ...validation.content };
       await writeData(data);
-      sendJson(res, 200, data.content);
+      sendJson(res, 200, { ok: true, message: "Lưu thành công.", content: data.content });
       return;
     } catch (err) {
       sendJson(res, 400, { message: "JSON không hợp lệ." });
@@ -340,6 +412,104 @@ const server = http.createServer(async (req, res) => {
     const data = await readData();
     sendJson(res, 200, data.users.map(sanitizeUser));
     return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/users") {
+    const session = requireAuth(req, res, "users.write");
+    if (!session) return;
+    try {
+      const body = await parseBody(req);
+      const username = String(body.username || "").trim().toLowerCase();
+      const displayName = String(body.displayName || "").trim();
+      const password = String(body.password || "");
+      const role = String(body.role || "").trim();
+
+      if (!username || !displayName || !password) {
+        sendJson(res, 400, { message: "Username, tên hiển thị và mật khẩu là bắt buộc." });
+        return;
+      }
+      if (!/^[a-z0-9_]{3,30}$/.test(username)) {
+        sendJson(res, 400, { message: "Username chỉ gồm chữ thường, số, gạch dưới (3-30 ký tự)." });
+        return;
+      }
+      if (password.length < 6) {
+        sendJson(res, 400, { message: "Mật khẩu tối thiểu 6 ký tự." });
+        return;
+      }
+      if (!["viewer", "editor", "admin"].includes(role)) {
+        sendJson(res, 400, { message: "Quyền phải là viewer, editor hoặc admin." });
+        return;
+      }
+
+      const data = await readData();
+      if (data.users.some(u => u.username === username)) {
+        sendJson(res, 409, { message: "Username đã tồn tại." });
+        return;
+      }
+
+      const passRecord = createPasswordRecord(password);
+      const id = data.lastUserId + 1;
+      const user = {
+        id,
+        username,
+        displayName,
+        role,
+        salt: passRecord.salt,
+        passwordHash: passRecord.hash
+      };
+      data.lastUserId = id;
+      data.users.push(user);
+      await writeData(data);
+      sendJson(res, 201, { ok: true, message: "Tạo tài khoản thành công.", user: sanitizeUser(user) });
+      return;
+    } catch (err) {
+      sendJson(res, 400, { message: "JSON không hợp lệ." });
+      return;
+    }
+  }
+
+  if (req.method === "PUT" && pathname.startsWith("/api/users/")) {
+    const session = requireAuth(req, res, "users.write");
+    if (!session) return;
+    try {
+      const id = Number(pathname.split("/").pop());
+      const body = await parseBody(req);
+      const data = await readData();
+      const user = data.users.find(u => u.id === id);
+      if (!user) {
+        sendJson(res, 404, { message: "Không tìm thấy tài khoản." });
+        return;
+      }
+      if (body.displayName) user.displayName = String(body.displayName).trim();
+      if (body.role) {
+        const role = String(body.role).trim();
+        if (!["viewer", "editor", "admin"].includes(role)) {
+          sendJson(res, 400, { message: "Quyền không hợp lệ." });
+          return;
+        }
+        if (user.id === session.userId && role !== "admin") {
+          sendJson(res, 400, { message: "Không thể tự hạ quyền admin của chính mình." });
+          return;
+        }
+        user.role = role;
+      }
+      if (body.password) {
+        const password = String(body.password);
+        if (password.length < 6) {
+          sendJson(res, 400, { message: "Mật khẩu mới tối thiểu 6 ký tự." });
+          return;
+        }
+        const passRecord = createPasswordRecord(password);
+        user.salt = passRecord.salt;
+        user.passwordHash = passRecord.hash;
+      }
+      await writeData(data);
+      sendJson(res, 200, { ok: true, message: "Cập nhật tài khoản thành công.", user: sanitizeUser(user) });
+      return;
+    } catch (err) {
+      sendJson(res, 400, { message: "JSON không hợp lệ." });
+      return;
+    }
   }
 
   if (req.method === "POST" && pathname === "/api/leads") {

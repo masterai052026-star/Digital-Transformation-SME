@@ -61,15 +61,51 @@
 
       <section id="tab-content" class="tab-panel hidden">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold">Cập nhật nội dung hiển thị trên Frontend</h2>
+          <div>
+            <h2 class="text-lg font-bold">Cập nhật nội dung hiển thị trên Frontend</h2>
+            <p class="text-sm text-slate-500 mt-1">Tuân thủ giới hạn ký tự bên cạnh mỗi trường để tránh lệch layout trên website.</p>
+          </div>
           <button id="saveContentBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hidden">Lưu thay đổi</button>
         </div>
         <form id="contentForm" class="grid md:grid-cols-2 gap-4"></form>
-        <p id="contentMessage" class="mt-4 text-sm hidden"></p>
+        <div id="contentMessage" class="mt-4 hidden"></div>
       </section>
 
       <section id="tab-users" class="tab-panel hidden">
-        <h2 class="text-lg font-bold mb-4">Danh sách tài khoản quản trị</h2>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold">Quản lý tài khoản</h2>
+        </div>
+
+        <div id="createUserPanel" class="hidden mb-6 p-6 bg-white border border-slate-200 rounded-xl">
+          <h3 class="font-semibold mb-4">Tạo tài khoản mới</h3>
+          <form id="createUserForm" class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Username *</label>
+              <input id="newUsername" class="w-full px-3 py-2 border rounded-lg" placeholder="vd: sales_team" required />
+              <p class="text-xs text-slate-500 mt-1">Chữ thường, số, gạch dưới. 3-30 ký tự.</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Tên hiển thị *</label>
+              <input id="newDisplayName" class="w-full px-3 py-2 border rounded-lg" placeholder="Nhân viên kinh doanh" required />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Mật khẩu *</label>
+              <input id="newPassword" type="password" class="w-full px-3 py-2 border rounded-lg" placeholder="Tối thiểu 6 ký tự" required />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Quyền *</label>
+              <select id="newRole" class="w-full px-3 py-2 border rounded-lg">
+                <option value="viewer">viewer — chỉ xem lead</option>
+                <option value="editor">editor — sửa lead + nội dung</option>
+                <option value="admin">admin — toàn quyền</option>
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold">Tạo tài khoản</button>
+            </div>
+          </form>
+        </div>
+
         <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
           <table class="min-w-full text-sm">
             <thead class="bg-slate-100">
@@ -78,17 +114,20 @@
                 <th class="px-4 py-3 text-left">Username</th>
                 <th class="px-4 py-3 text-left">Tên hiển thị</th>
                 <th class="px-4 py-3 text-left">Quyền</th>
+                <th class="px-4 py-3 text-left manage-col hidden">Thao tác</th>
               </tr>
             </thead>
             <tbody id="userTableBody"></tbody>
           </table>
         </div>
         <div class="mt-4 p-4 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
-          <strong>Phân quyền:</strong> viewer (chỉ xem lead) · editor (xem/sửa/xóa lead + sửa nội dung) · admin (toàn quyền)
+          <strong>Phân quyền:</strong> viewer (chỉ xem lead) · editor (xem/sửa/xóa lead + sửa nội dung) · admin (toàn quyền + tạo user)
         </div>
       </section>
     </main>
   </div>
+
+  <div id="toast" class="hidden fixed top-4 right-4 z-[100] max-w-sm px-4 py-3 rounded-xl shadow-lg text-sm font-medium"></div>
 
   <div id="editModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-xl w-full max-w-lg p-6">
@@ -108,10 +147,44 @@
     </div>
   </div>
 
+  <div id="editUserModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl w-full max-w-lg p-6">
+      <h3 class="text-lg font-bold mb-4">Sửa tài khoản</h3>
+      <form id="editUserForm" class="space-y-3">
+        <input type="hidden" id="editUserId" />
+        <div>
+          <label class="text-sm font-medium">Username</label>
+          <input id="editUserUsername" class="w-full px-3 py-2 border rounded-lg bg-slate-50" readonly />
+        </div>
+        <div>
+          <label class="text-sm font-medium">Tên hiển thị</label>
+          <input id="editUserDisplayName" class="w-full px-3 py-2 border rounded-lg" required />
+        </div>
+        <div>
+          <label class="text-sm font-medium">Quyền</label>
+          <select id="editUserRole" class="w-full px-3 py-2 border rounded-lg">
+            <option value="viewer">viewer</option>
+            <option value="editor">editor</option>
+            <option value="admin">admin</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">Mật khẩu mới (để trống nếu không đổi)</label>
+          <input id="editUserPassword" type="password" class="w-full px-3 py-2 border rounded-lg" placeholder="Tối thiểu 6 ký tự" />
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Lưu</button>
+          <button type="button" id="closeUserModalBtn" class="px-4 py-2 border rounded-lg">Hủy</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     var currentUser = null;
     var permissions = null;
     var contentData = {};
+    var contentRules = {};
 
     function authHeaders() {
       var token = localStorage.getItem('authToken');
@@ -121,7 +194,35 @@
     async function apiFetch(url, options) {
       options = options || {};
       options.headers = Object.assign({ 'Content-Type': 'application/json' }, authHeaders(), options.headers || {});
-      return fetch(url, options);
+      var res = await fetch(url, options);
+      return res;
+    }
+
+    function showToast(message, type) {
+      var toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'fixed top-4 right-4 z-[100] max-w-sm px-4 py-3 rounded-xl shadow-lg text-sm font-medium ' +
+        (type === 'success' ? 'bg-emerald-600 text-white' : type === 'error' ? 'bg-red-600 text-white' : 'bg-slate-800 text-white');
+      toast.classList.remove('hidden');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(function () { toast.classList.add('hidden'); }, 4500);
+    }
+
+    function showInlineMessage(containerId, message, type, errors) {
+      var el = document.getElementById(containerId);
+      var html = '<div class="p-4 rounded-lg text-sm ' +
+        (type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200') +
+        '">' + message;
+      if (errors && errors.length) {
+        html += '<ul class="mt-2 list-disc pl-5 space-y-1">';
+        errors.forEach(function (err) {
+          html += '<li><strong>' + err.field + ':</strong> ' + err.message + '</li>';
+        });
+        html += '</ul>';
+      }
+      html += '</div>';
+      el.innerHTML = html;
+      el.classList.remove('hidden');
     }
 
     async function initAuth() {
@@ -140,6 +241,10 @@
       if (permissions.canEditLeads) document.querySelectorAll('.edit-col').forEach(function (el) { el.classList.remove('hidden'); });
       if (permissions.canEditContent) document.getElementById('saveContentBtn').classList.remove('hidden');
       if (permissions.canViewUsers) document.getElementById('usersTabBtn').classList.remove('hidden');
+      if (permissions.canManageUsers) {
+        document.getElementById('createUserPanel').classList.remove('hidden');
+        document.querySelectorAll('.manage-col').forEach(function (el) { el.classList.remove('hidden'); });
+      }
       loadLeads();
       loadContentForm();
     }
@@ -203,8 +308,14 @@
 
     window.deleteLead = async function (id) {
       if (!confirm('Xóa lead #' + id + '?')) return;
-      await apiFetch('/api/leads/' + id, { method: 'DELETE' });
-      loadLeads();
+      var res = await apiFetch('/api/leads/' + id, { method: 'DELETE' });
+      if (res.ok || res.status === 204) {
+        showToast('Đã xóa lead thành công.', 'success');
+        loadLeads();
+      } else {
+        var data = await res.json().catch(function () { return {}; });
+        showToast(data.message || 'Xóa thất bại.', 'error');
+      }
     };
 
     var contentFields = [
@@ -235,46 +346,123 @@
       ['footerText', 'Footer']
     ];
 
+    function updateCharCounter(input) {
+      var key = input.getAttribute('data-key');
+      var rule = contentRules[key];
+      if (!rule) return;
+      var counter = input.parentElement.querySelector('.char-counter');
+      var len = input.value.length;
+      counter.textContent = len + ' / ' + rule.max + ' ký tự';
+      counter.className = 'char-counter text-xs mt-1 ' + (len > rule.max ? 'text-red-600 font-semibold' : 'text-slate-500');
+      input.classList.toggle('border-red-500', len > rule.max);
+    }
+
+    function renderContentField(key, label, val, readonly) {
+      var rule = contentRules[key] || { max: 200, hint: '' };
+      var isLong = val.length > 80 || key.indexOf('Description') > -1 || key.indexOf('Intro') > -1 || key === 'expertQuote';
+      var spanClass = isLong ? 'md:col-span-2' : '';
+      var inputHtml = isLong
+        ? '<textarea data-key="' + key + '" maxlength="' + rule.max + '" rows="3" class="content-field w-full px-3 py-2 border rounded-lg"' + (readonly ? ' readonly' : '') + '>' + val + '</textarea>'
+        : '<input data-key="' + key + '" maxlength="' + rule.max + '" value="' + val.replace(/"/g, '&quot;') + '" class="content-field w-full px-3 py-2 border rounded-lg"' + (readonly ? ' readonly' : '') + ' />';
+      return '<div class="' + spanClass + '">' +
+        '<label class="block text-sm font-medium mb-1">' + label + ' <span class="text-slate-400 font-normal">(tối đa ' + rule.max + ')</span></label>' +
+        inputHtml +
+        '<p class="text-xs text-blue-600 mt-1">💡 ' + rule.hint + '</p>' +
+        '<p class="char-counter text-xs mt-1 text-slate-500">' + val.length + ' / ' + rule.max + ' ký tự</p>' +
+      '</div>';
+    }
+
     async function loadContentForm() {
+      var rulesRes = await fetch('/api/content/rules');
+      contentRules = await rulesRes.json();
       var res = await fetch('/api/content');
       contentData = await res.json();
       var form = document.getElementById('contentForm');
       form.innerHTML = contentFields.map(function (item) {
-        var key = item[0];
-        var label = item[1];
-        var val = contentData[key] || '';
-        var isLong = val.length > 80 || key.indexOf('Description') > -1 || key.indexOf('Intro') > -1 || key === 'expertQuote';
-        if (isLong) {
-          return '<div class="md:col-span-2"><label class="block text-sm font-medium mb-1">' + label + '</label><textarea data-key="' + key + '" rows="3" class="w-full px-3 py-2 border rounded-lg"' + (permissions.canEditContent ? '' : ' readonly') + '>' + val + '</textarea></div>';
-        }
-        return '<div><label class="block text-sm font-medium mb-1">' + label + '</label><input data-key="' + key + '" value="' + val.replace(/"/g, '&quot;') + '" class="w-full px-3 py-2 border rounded-lg"' + (permissions.canEditContent ? '' : ' readonly') + ' /></div>';
+        return renderContentField(item[0], item[1], contentData[item[0]] || '', !permissions.canEditContent);
       }).join('');
+      form.querySelectorAll('.content-field').forEach(function (el) {
+        el.addEventListener('input', function () { updateCharCounter(el); });
+      });
+    }
+
+    function validateContentClient() {
+      var errors = [];
+      document.querySelectorAll('#contentForm [data-key]').forEach(function (el) {
+        var key = el.getAttribute('data-key');
+        var rule = contentRules[key];
+        var val = el.value.trim();
+        if (!val) errors.push({ field: key, message: 'Không được để trống.' });
+        else if (rule && val.length > rule.max) errors.push({ field: key, message: 'Vượt quá ' + rule.max + ' ký tự.' });
+        else if (rule && rule.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) errors.push({ field: key, message: 'Email không đúng định dạng.' });
+        else if (rule && rule.type === 'url' && !/^https:\/\/.+/i.test(val)) errors.push({ field: key, message: 'URL phải bắt đầu bằng https://' });
+      });
+      return errors;
     }
 
     async function saveContent() {
+      document.getElementById('contentMessage').classList.add('hidden');
+      var clientErrors = validateContentClient();
+      if (clientErrors.length) {
+        showInlineMessage('contentMessage', 'Lưu thất bại — vui lòng sửa các lỗi sau:', 'error', clientErrors);
+        showToast('Có trường không hợp lệ. Kiểm tra lại.', 'error');
+        return;
+      }
       var payload = {};
       document.querySelectorAll('#contentForm [data-key]').forEach(function (el) {
-        payload[el.getAttribute('data-key')] = el.value;
+        payload[el.getAttribute('data-key')] = el.value.trim();
       });
-      var res = await apiFetch('/api/content', { method: 'PUT', body: JSON.stringify(payload) });
-      var msg = document.getElementById('contentMessage');
-      if (res.ok) {
-        msg.textContent = 'Đã lưu nội dung. Refresh trang chủ để xem thay đổi.';
-        msg.className = 'mt-4 text-sm text-emerald-700';
-      } else {
-        msg.textContent = 'Lưu thất bại. Kiểm tra quyền editor/admin.';
-        msg.className = 'mt-4 text-sm text-red-600';
+      var btn = document.getElementById('saveContentBtn');
+      btn.disabled = true;
+      btn.textContent = 'Đang lưu...';
+      try {
+        var res = await apiFetch('/api/content', { method: 'PUT', body: JSON.stringify(payload) });
+        var data = await res.json();
+        if (res.ok) {
+          showInlineMessage('contentMessage', '✓ Lưu thành công! Nội dung đã cập nhật. Refresh trang chủ để xem thay đổi.', 'success');
+          showToast('Lưu thành công!', 'success');
+        } else {
+          showInlineMessage('contentMessage', data.message || 'Lưu thất bại.', 'error', data.errors || []);
+          showToast(data.message || 'Lưu thất bại.', 'error');
+        }
+      } catch (err) {
+        showInlineMessage('contentMessage', 'Lỗi kết nối server. Vui lòng thử lại.', 'error');
+        showToast('Lỗi kết nối server.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Lưu thay đổi';
       }
-      msg.classList.remove('hidden');
     }
 
     async function loadUsers() {
       var res = await apiFetch('/api/users');
       var users = await res.json();
       document.getElementById('userTableBody').innerHTML = users.map(function (u) {
-        return '<tr class="border-t"><td class="px-4 py-3">' + u.id + '</td><td class="px-4 py-3">' + u.username + '</td><td class="px-4 py-3">' + u.displayName + '</td><td class="px-4 py-3 uppercase font-semibold">' + u.role + '</td></tr>';
+        var manageBtn = permissions.canManageUsers
+          ? '<button class="text-blue-600 hover:underline" onclick="openEditUserModal(' + u.id + ')">Sửa quyền</button>'
+          : '';
+        return '<tr class="border-t">' +
+          '<td class="px-4 py-3">' + u.id + '</td>' +
+          '<td class="px-4 py-3">' + u.username + '</td>' +
+          '<td class="px-4 py-3">' + u.displayName + '</td>' +
+          '<td class="px-4 py-3 uppercase font-semibold">' + u.role + '</td>' +
+          '<td class="px-4 py-3 manage-col ' + (permissions.canManageUsers ? '' : 'hidden') + '">' + manageBtn + '</td>' +
+        '</tr>';
       }).join('');
     }
+
+    window.openEditUserModal = async function (id) {
+      var res = await apiFetch('/api/users');
+      var users = await res.json();
+      var user = users.find(function (u) { return u.id === id; });
+      if (!user) return;
+      document.getElementById('editUserId').value = user.id;
+      document.getElementById('editUserUsername').value = user.username;
+      document.getElementById('editUserDisplayName').value = user.displayName;
+      document.getElementById('editUserRole').value = user.role;
+      document.getElementById('editUserPassword').value = '';
+      document.getElementById('editUserModal').classList.remove('hidden');
+    };
 
     document.querySelectorAll('.tab-btn').forEach(function (btn) {
       btn.addEventListener('click', function () { switchTab(btn.getAttribute('data-tab')); });
@@ -284,10 +472,13 @@
     document.getElementById('closeModalBtn').addEventListener('click', function () {
       document.getElementById('editModal').classList.add('hidden');
     });
+    document.getElementById('closeUserModalBtn').addEventListener('click', function () {
+      document.getElementById('editUserModal').classList.add('hidden');
+    });
     document.getElementById('editLeadForm').addEventListener('submit', async function (e) {
       e.preventDefault();
       var id = document.getElementById('editLeadId').value;
-      await apiFetch('/api/leads/' + id, {
+      var res = await apiFetch('/api/leads/' + id, {
         method: 'PUT',
         body: JSON.stringify({
           fullName: document.getElementById('editFullName').value,
@@ -297,8 +488,53 @@
           preferredTime: document.getElementById('editPreferredTime').value
         })
       });
-      document.getElementById('editModal').classList.add('hidden');
-      loadLeads();
+      if (res.ok) {
+        showToast('Cập nhật lead thành công.', 'success');
+        document.getElementById('editModal').classList.add('hidden');
+        loadLeads();
+      } else {
+        var data = await res.json().catch(function () { return {}; });
+        showToast(data.message || 'Cập nhật thất bại.', 'error');
+      }
+    });
+    document.getElementById('createUserForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var res = await apiFetch('/api/users', {
+        method: 'POST',
+        body: JSON.stringify({
+          username: document.getElementById('newUsername').value.trim(),
+          displayName: document.getElementById('newDisplayName').value.trim(),
+          password: document.getElementById('newPassword').value,
+          role: document.getElementById('newRole').value
+        })
+      });
+      var data = await res.json();
+      if (res.ok) {
+        showToast('Tạo tài khoản thành công!', 'success');
+        document.getElementById('createUserForm').reset();
+        loadUsers();
+      } else {
+        showToast(data.message || 'Tạo tài khoản thất bại.', 'error');
+      }
+    });
+    document.getElementById('editUserForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var id = document.getElementById('editUserId').value;
+      var body = {
+        displayName: document.getElementById('editUserDisplayName').value.trim(),
+        role: document.getElementById('editUserRole').value
+      };
+      var pwd = document.getElementById('editUserPassword').value;
+      if (pwd) body.password = pwd;
+      var res = await apiFetch('/api/users/' + id, { method: 'PUT', body: JSON.stringify(body) });
+      var data = await res.json();
+      if (res.ok) {
+        showToast('Cập nhật tài khoản thành công.', 'success');
+        document.getElementById('editUserModal').classList.add('hidden');
+        loadUsers();
+      } else {
+        showToast(data.message || 'Cập nhật thất bại.', 'error');
+      }
     });
     document.getElementById('logoutBtn').addEventListener('click', async function () {
       await apiFetch('/api/auth/logout', { method: 'POST' });
