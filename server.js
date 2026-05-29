@@ -4,6 +4,7 @@ const fsp = require("fs/promises");
 const path = require("path");
 const crypto = require("crypto");
 const { URL } = require("url");
+const { Client } = require("@notionhq/client");
 
 const PORT = process.env.PORT || 3000;
 const ROOT_DIR = __dirname;
@@ -302,6 +303,159 @@ function requireAuth(req, res, action) {
   return session;
 }
 
+const NOTION_PROPERTY_ALIASES = {
+  full_name: [
+    "Họ tên", "Ho ten", "Name", "Full Name", "Full name", "Tên",
+    "Invitee Name", "Guest Name", "Attendee Name", "Client Name"
+  ],
+  work_email: [
+    "Email", "Work Email", "Email công việc", "Email cong viec",
+    "Invitee Email", "Guest Email", "Email Address", "Email address"
+  ],
+  phone_number: [
+    "Số điện thoại", "So dien thoai", "Phone", "Phone Number", "Điện thoại",
+    "Invitee Phone", "Guest Phone", "Text Phone Number", "Mobile"
+  ],
+  company_name: [
+    "Doanh nghiệp", "Doanh nghiep", "Company", "Company Name", "Công ty",
+    "Organization", "Invitee Company", "Business Name"
+  ],
+  preferred_time: [
+    "Khung giờ", "Khung gio", "Preferred Time", "Event Time", "Start Time", "Thời gian", "Lịch hẹn",
+    "Event Start Time", "Meeting Time", "Scheduled At", "When", "Date", "Start", "End Time"
+  ],
+  source: [
+    "Nguồn", "Nguon", "Source", "Event Type", "Calendly Event", "Meeting Type", "Event Name"
+  ],
+  pain_points: [
+    "Pain Points", "Ghi chú", "Ghi chu", "Notes", "Nỗi đau", "Question", "Questions", "Answer"
+  ]
+};
+
+function getNotionClient() {
+  const apiKey = process.env.NOTION_API_KEY;
+  if (!apiKey) return null;
+  return new Client({ auth: apiKey });
+}
+
+function extractNotionText(property) {
+  if (!property) return "";
+  switch (property.type) {
+    case "title":
+      return (property.title || []).map(item => item.plain_text).join("").trim();
+    case "rich_text":
+      return (property.rich_text || []).map(item => item.plain_text).join("").trim();
+    case "email":
+      return property.email || "";
+    case "phone_number":
+      return property.phone_number || "";
+    case "select":
+      return property.select?.name || "";
+    case "multi_select":
+      return (property.multi_select || []).map(item => item.name).join(", ");
+    case "url":
+      return property.url || "";
+    case "number":
+      return property.number != null ? String(property.number) : "";
+    case "date":
+      if (!property.date) return "";
+      return property.date.end
+        ? `${property.date.start} → ${property.date.end}`
+        : property.date.start || "";
+    case "checkbox":
+      return property.checkbox ? "Có" : "Không";
+    case "status":
+      return property.status?.name || "";
+    default:
+      return "";
+  }
+}
+
+function findNotionProperty(properties, aliases) {
+  const keys = Object.keys(properties || {});
+  for (const alias of aliases) {
+    const exact = keys.find(key => key === alias);
+    if (exact) return properties[exact];
+    const ci = keys.find(key => key.toLowerCase() === alias.toLowerCase());
+    if (ci) return properties[ci];
+    const partial = keys.find(key => key.toLowerCase().includes(alias.toLowerCase()));
+    if (partial) return properties[partial];
+  }
+  return null;
+}
+
+function findFirstNotionPropertyByType(properties, type) {
+  return Object.values(properties || {}).find(property => property.type === type) || null;
+}
+
+function normalizeNotionDatabaseId(rawId) {
+  return String(rawId || "").replace(/-/g, "").trim();
+}
+
+function parseNotionLead(page, index) {
+  const props = page.properties || {};
+  const titleProp = Object.values(props).find(p => p.type === "title");
+  const emailProp =
+    findNotionProperty(props, NOTION_PROPERTY_ALIASES.work_email) ||
+    findFirstNotionPropertyByType(props, "email");
+  const phoneProp =
+    findNotionProperty(props, NOTION_PROPERTY_ALIASES.phone_number) ||
+    findFirstNotionPropertyByType(props, "phone_number");
+  const timeProp =
+    findNotionProperty(props, NOTION_PROPERTY_ALIASES.preferred_time) ||
+    findFirstNotionPropertyByType(props, "date");
+  const fullName =
+    extractNotionText(findNotionProperty(props, NOTION_PROPERTY_ALIASES.full_name)) ||
+    extractNotionText(titleProp);
+
+  return {
+    id: page.id,
+    notion_id: page.id,
+    full_name: fullName,
+    work_email: extractNotionText(emailProp),
+    company_name: extractNotionText(findNotionProperty(props, NOTION_PROPERTY_ALIASES.company_name)),
+    phone_number: extractNotionText(phoneProp),
+    preferred_time: extractNotionText(timeProp),
+    source: extractNotionText(findNotionProperty(props, NOTION_PROPERTY_ALIASES.source)) || "notion",
+    pain_points: extractNotionText(findNotionProperty(props, NOTION_PROPERTY_ALIASES.pain_points)),
+    created_at: page.created_time || "",
+    updated_at: page.last_edited_time || "",
+    row_number: index + 1
+  };
+}
+
+async function fetchNotionLeads() {
+  const databaseId = normalizeNotionDatabaseId(process.env.NOTION_DATABASE_ID);
+  const notion = getNotionClient();
+
+  if (!notion || !databaseId) {
+    const err = new Error("Thiếu cấu hình NOTION_API_KEY hoặc NOTION_DATABASE_ID.");
+    err.code = "NOTION_CONFIG_MISSING";
+    throw err;
+  }
+
+  const leads = [];
+  let cursor;
+
+  do {
+    const response = await notion.databases.query({
+      database_id: databaseId,
+      start_cursor: cursor,
+      sorts: [{ timestamp: "created_time", direction: "descending" }]
+    });
+
+    response.results.forEach((page, idx) => {
+      if (page.object === "page") {
+        leads.push(parseNotionLead(page, leads.length + idx));
+      }
+    });
+
+    cursor = response.has_more ? response.next_cursor : undefined;
+  } while (cursor);
+
+  return leads;
+}
+
 const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://localhost:${PORT}`);
   const { pathname } = parsedUrl;
@@ -551,8 +705,19 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && pathname === "/api/leads") {
     const session = requireAuth(req, res, "leads.read");
     if (!session) return;
-    const data = await readData();
-    sendJson(res, 200, data.leads);
+    try {
+      const leads = await fetchNotionLeads();
+      sendJson(res, 200, leads);
+    } catch (err) {
+      console.error("Notion leads fetch error:", err.message);
+      const status = err.code === "NOTION_CONFIG_MISSING" ? 503 : 502;
+      sendJson(res, status, {
+        message: err.code === "NOTION_CONFIG_MISSING"
+          ? "Chưa cấu hình Notion. Thiết lập NOTION_API_KEY và NOTION_DATABASE_ID trên server."
+          : "Không thể tải dữ liệu từ Notion. Kiểm tra API key, Database ID và quyền kết nối.",
+        detail: err.message
+      });
+    }
     return;
   }
 

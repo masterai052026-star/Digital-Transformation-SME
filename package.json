@@ -13,5 +13,8 @@
     "landing-page"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@notionhq/client": "^5.22.0"
+  }
 }

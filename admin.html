@@ -34,9 +34,13 @@
 
       <section id="tab-leads" class="tab-panel">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold">Danh sách khách hàng đăng ký tư vấn</h2>
+          <div>
+            <h2 class="text-lg font-bold">Danh sách khách hàng đăng ký tư vấn</h2>
+            <p class="text-sm text-slate-500 mt-1">Dữ liệu đồng bộ trực tiếp từ Notion Database.</p>
+          </div>
           <button id="refreshLeadsBtn" class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold">Refresh</button>
         </div>
+        <p id="leadsSummary" class="text-sm text-slate-500 mb-3 hidden"></p>
         <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
           <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
@@ -48,6 +52,7 @@
                   <th class="px-4 py-3 text-left">Doanh nghiệp</th>
                   <th class="px-4 py-3 text-left">Điện thoại</th>
                   <th class="px-4 py-3 text-left">Khung giờ</th>
+                  <th class="px-4 py-3 text-left">Pain Points</th>
                   <th class="px-4 py-3 text-left">Nguồn</th>
                   <th class="px-4 py-3 text-left">Tạo lúc</th>
                   <th class="px-4 py-3 text-left edit-col hidden">Thao tác</th>
@@ -245,8 +250,35 @@
         document.getElementById('createUserPanel').classList.remove('hidden');
         document.querySelectorAll('.manage-col').forEach(function (el) { el.classList.remove('hidden'); });
       }
-      loadLeads();
+      switchTab('leads');
       loadContentForm();
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '';
+      var date = new Date(value);
+      if (isNaN(date.getTime())) return value;
+      return date.toLocaleString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function displayLeadId(lead) {
+      if (lead.row_number) return lead.row_number;
+      if (lead.notion_id) return String(lead.notion_id).slice(0, 8) + '…';
+      return lead.id || '—';
     }
 
     function switchTab(name) {
@@ -259,39 +291,64 @@
       var active = document.querySelector('[data-tab="' + name + '"]');
       active.classList.add('bg-blue-600', 'text-white');
       active.classList.remove('bg-white', 'border', 'border-slate-300');
+      if (name === 'leads') loadLeads();
       if (name === 'users') loadUsers();
     }
 
     async function loadLeads() {
       var body = document.getElementById('leadTableBody');
-      body.innerHTML = '<tr><td colspan="9" class="px-4 py-4">Đang tải...</td></tr>';
-      var res = await apiFetch('/api/leads');
-      if (!res.ok) {
-        body.innerHTML = '<tr><td colspan="9" class="px-4 py-4 text-red-600">Không tải được dữ liệu.</td></tr>';
-        return;
+      var summary = document.getElementById('leadsSummary');
+      var colSpan = permissions.canEditLeads ? 10 : 9;
+      summary.classList.add('hidden');
+      body.innerHTML = '<tr><td colspan="' + colSpan + '" class="px-4 py-6 text-slate-500">Đang tải dữ liệu từ Notion...</td></tr>';
+
+      try {
+        var res = await apiFetch('/api/leads');
+        var payload = await res.json().catch(function () { return {}; });
+
+        if (!res.ok) {
+          body.innerHTML = '<tr><td colspan="' + colSpan + '" class="px-4 py-6 text-red-600">' +
+            escapeHtml(payload.message || 'Không tải được dữ liệu từ Notion.') +
+            (payload.detail ? '<br><span class="text-xs">' + escapeHtml(payload.detail) + '</span>' : '') +
+            '</td></tr>';
+          return;
+        }
+
+        var leads = Array.isArray(payload) ? payload : (payload.leads || []);
+
+        if (!leads.length) {
+          body.innerHTML = '<tr><td colspan="' + colSpan + '" class="px-4 py-6 text-slate-500">Chưa có khách hàng nào trong Notion Database.</td></tr>';
+          return;
+        }
+
+        summary.textContent = 'Đã tải ' + leads.length + ' khách hàng từ Notion.';
+        summary.classList.remove('hidden');
+
+        body.innerHTML = leads.map(function (lead) {
+          var isNotionLead = Boolean(lead.notion_id);
+          var actions = isNotionLead
+            ? '<span class="text-slate-400 text-xs">Đồng bộ từ Notion</span>'
+            : (permissions.canEditLeads
+              ? '<button class="text-blue-600 hover:underline mr-2" onclick="openEditModal(' + lead.id + ')">Sửa</button>' +
+                '<button class="text-red-600 hover:underline" onclick="deleteLead(' + lead.id + ')">Xóa</button>'
+              : '<span class="text-slate-400">Chỉ xem</span>');
+
+          return '<tr class="border-t hover:bg-slate-50">' +
+            '<td class="px-4 py-3 font-mono text-xs">' + escapeHtml(displayLeadId(lead)) + '</td>' +
+            '<td class="px-4 py-3 font-medium">' + escapeHtml(lead.full_name || '—') + '</td>' +
+            '<td class="px-4 py-3">' + escapeHtml(lead.work_email || '—') + '</td>' +
+            '<td class="px-4 py-3">' + escapeHtml(lead.company_name || '—') + '</td>' +
+            '<td class="px-4 py-3">' + escapeHtml(lead.phone_number || '—') + '</td>' +
+            '<td class="px-4 py-3 whitespace-nowrap">' + escapeHtml(lead.preferred_time || '—') + '</td>' +
+            '<td class="px-4 py-3 max-w-xs truncate" title="' + escapeHtml(lead.pain_points || '') + '">' + escapeHtml(lead.pain_points || '—') + '</td>' +
+            '<td class="px-4 py-3">' + escapeHtml(lead.source || 'notion') + '</td>' +
+            '<td class="px-4 py-3 whitespace-nowrap">' + escapeHtml(formatDateTime(lead.created_at)) + '</td>' +
+            '<td class="px-4 py-3 edit-col ' + (permissions.canEditLeads ? '' : 'hidden') + '">' + actions + '</td>' +
+          '</tr>';
+        }).join('');
+      } catch (err) {
+        body.innerHTML = '<tr><td colspan="' + colSpan + '" class="px-4 py-6 text-red-600">Lỗi kết nối server. Vui lòng thử lại.</td></tr>';
       }
-      var leads = await res.json();
-      if (!leads.length) {
-        body.innerHTML = '<tr><td colspan="9" class="px-4 py-4">Chưa có lead nào.</td></tr>';
-        return;
-      }
-      body.innerHTML = leads.map(function (lead) {
-        var actions = permissions.canEditLeads
-          ? '<button class="text-blue-600 hover:underline mr-2" onclick="openEditModal(' + lead.id + ')">Sửa</button>' +
-            '<button class="text-red-600 hover:underline" onclick="deleteLead(' + lead.id + ')">Xóa</button>'
-          : '<span class="text-slate-400">Chỉ xem</span>';
-        return '<tr class="border-t">' +
-          '<td class="px-4 py-3">' + lead.id + '</td>' +
-          '<td class="px-4 py-3">' + lead.full_name + '</td>' +
-          '<td class="px-4 py-3">' + lead.work_email + '</td>' +
-          '<td class="px-4 py-3">' + (lead.company_name || '') + '</td>' +
-          '<td class="px-4 py-3">' + (lead.phone_number || '') + '</td>' +
-          '<td class="px-4 py-3">' + (lead.preferred_time || '') + '</td>' +
-          '<td class="px-4 py-3">' + (lead.source || '') + '</td>' +
-          '<td class="px-4 py-3">' + (lead.created_at || '') + '</td>' +
-          '<td class="px-4 py-3 edit-col ' + (permissions.canEditLeads ? '' : 'hidden') + '">' + actions + '</td>' +
-        '</tr>';
-      }).join('');
     }
 
     window.openEditModal = async function (id) {
