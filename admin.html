@@ -6,6 +6,7 @@
   <title>Admin — Digital SME</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .report-md h1 { font-size: 1.5rem; font-weight: 700; margin: 1.25rem 0 0.75rem; color: #0f172a; }
     .report-md h2 { font-size: 1.25rem; font-weight: 700; margin: 1.25rem 0 0.5rem; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.35rem; }
@@ -123,6 +124,14 @@
         <p id="reportMeta" class="text-sm text-slate-500 mb-3 hidden"></p>
         <div id="reportContent" class="bg-white border border-slate-200 rounded-xl p-6 md:p-8 min-h-[320px]">
           <p class="text-slate-400 text-sm">Chọn một phòng ban ở trên để tải báo cáo Markdown.</p>
+        </div>
+        <div id="reportCharts" class="mt-4 space-y-4">
+          <div id="financeChartWrap" class="hidden bg-white border border-slate-200 rounded-xl p-4">
+            <canvas id="financeChart" style="max-height: 250px"></canvas>
+          </div>
+          <div id="marketingChartWrap" class="hidden bg-white border border-slate-200 rounded-xl p-4">
+            <canvas id="marketingChart" style="max-height: 250px"></canvas>
+          </div>
         </div>
       </section>
 
@@ -349,6 +358,136 @@
 
     var activeReportDepartment = null;
     var generatePlanPollTimer = null;
+    var chartDataCache = null;
+    var financeChartInstance = null;
+    var marketingChartInstance = null;
+
+    function formatVnd(value) {
+      return new Intl.NumberFormat('vi-VN').format(value) + ' đ';
+    }
+
+    function hideReportCharts() {
+      document.getElementById('financeChartWrap').classList.add('hidden');
+      document.getElementById('marketingChartWrap').classList.add('hidden');
+    }
+
+    async function fetchChartData() {
+      if (chartDataCache) return chartDataCache;
+      var res = await apiFetch('/api/chart-data');
+      if (!res.ok) throw new Error('Không tải được dữ liệu biểu đồ.');
+      chartDataCache = await res.json();
+      return chartDataCache;
+    }
+
+    function renderFinanceChart(data) {
+      var wrap = document.getElementById('financeChartWrap');
+      var fin = data.finance;
+      if (!fin) return;
+      wrap.classList.remove('hidden');
+      if (financeChartInstance) financeChartInstance.destroy();
+      financeChartInstance = new Chart(document.getElementById('financeChart'), {
+        type: 'line',
+        data: {
+          labels: fin.labels,
+          datasets: [
+            {
+              label: 'Doanh thu (VNĐ)',
+              data: fin.revenue,
+              borderColor: '#2563eb',
+              backgroundColor: 'rgba(37, 99, 235, 0.12)',
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'BEP (VNĐ)',
+              data: fin.labels.map(function () { return fin.bep; }),
+              borderColor: '#ef4444',
+              borderDash: [6, 4],
+              pointRadius: 0,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            title: { display: true, text: 'Dự báo doanh thu & điểm hòa vốn (BEP)' },
+            tooltip: {
+              callbacks: {
+                label: function (ctx) { return ctx.dataset.label + ': ' + formatVnd(ctx.parsed.y); }
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: {
+                callback: function (value) { return (value / 1000000).toFixed(0) + 'M'; }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderMarketingChart(data) {
+      var wrap = document.getElementById('marketingChartWrap');
+      var mkt = data.marketing;
+      if (!mkt) return;
+      wrap.classList.remove('hidden');
+      if (marketingChartInstance) marketingChartInstance.destroy();
+      marketingChartInstance = new Chart(document.getElementById('marketingChart'), {
+        type: 'bar',
+        data: {
+          labels: mkt.labels,
+          datasets: [
+            {
+              label: 'Leads',
+              data: mkt.leads,
+              backgroundColor: ['#6366f1', '#8b5cf6', '#ec4899']
+            },
+            {
+              label: 'Chi phí / lead (VNĐ)',
+              data: mkt.cost_per_lead,
+              backgroundColor: ['#94a3b8', '#64748b', '#475569']
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            title: { display: true, text: 'Leads & chi phí theo kênh Marketing' },
+            tooltip: {
+              callbacks: {
+                label: function (ctx) {
+                  if (ctx.dataset.label.indexOf('VNĐ') !== -1) {
+                    return ctx.dataset.label + ': ' + formatVnd(ctx.parsed.y);
+                  }
+                  return ctx.dataset.label + ': ' + ctx.parsed.y;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    async function loadDepartmentChart(department) {
+      hideReportCharts();
+      if (department !== 'finance' && department !== 'marketing') return;
+      try {
+        var chartData = await fetchChartData();
+        if (activeReportDepartment !== department) return;
+        if (department === 'finance') renderFinanceChart(chartData);
+        if (department === 'marketing') renderMarketingChart(chartData);
+      } catch (err) {}
+    }
 
     function setGeneratePlanStatus(message, type) {
       var el = document.getElementById('generatePlanStatus');
@@ -475,9 +614,11 @@
       var metaEl = document.getElementById('reportMeta');
       activeReportDepartment = department;
       setActiveReportButton(department);
+      hideReportCharts();
       contentEl.className = 'bg-white border border-slate-200 rounded-xl p-6 md:p-8 min-h-[320px]';
       contentEl.innerHTML = '<p class="text-slate-500 text-sm">Đang tải báo cáo...</p>';
       metaEl.classList.add('hidden');
+      loadDepartmentChart(department);
 
       try {
         var res = await apiFetch('/api/reports/' + department);

@@ -10,6 +10,7 @@ const { Client } = require("@notionhq/client");
 const PORT = process.env.PORT || 3000;
 const ROOT_DIR = __dirname;
 const DATA_PATH = path.join(ROOT_DIR, "data.json");
+const CHART_DATA_PATH = path.join(ROOT_DIR, "data-chart.json");
 const AGENT_STATUS_PATH = path.join(ROOT_DIR, "agents", ".generation-status.json");
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8;
 
@@ -716,6 +717,20 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && pathname === "/api/content") {
     const data = await readData();
     sendJson(res, 200, data.content);
+    return;
+  }
+
+  if (req.method === "GET" && pathname === "/api/chart-data") {
+    try {
+      const raw = await fsp.readFile(CHART_DATA_PATH, "utf8");
+      sendJson(res, 200, JSON.parse(raw));
+    } catch (err) {
+      if (err.code === "ENOENT") {
+        sendJson(res, 404, { message: "Không tìm thấy file dữ liệu biểu đồ." });
+      } else {
+        sendJson(res, 500, { message: "Không đọc được dữ liệu biểu đồ.", detail: err.message });
+      }
+    }
     return;
   }
 
