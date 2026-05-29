@@ -118,10 +118,33 @@ function verifyPassword(password, salt, hash) {
   return hashPassword(password, salt) === hash;
 }
 
+function resolveBootstrapPassword(role) {
+  const envKeys = {
+    admin: "ADMIN_INITIAL_PASSWORD",
+    editor: "EDITOR_INITIAL_PASSWORD",
+    viewer: "VIEWER_INITIAL_PASSWORD"
+  };
+  const fromEnv = process.env[envKeys[role]];
+  if (fromEnv) return fromEnv;
+
+  if (process.env.NODE_ENV === "production") {
+    const err = new Error(`Thiếu biến môi trường ${envKeys[role]} cho lần khởi tạo dữ liệu đầu tiên trên production.`);
+    err.code = "BOOTSTRAP_PASSWORD_MISSING";
+    throw err;
+  }
+
+  const devDefaults = {
+    admin: "admin123",
+    editor: "editor123",
+    viewer: "viewer123"
+  };
+  return devDefaults[role];
+}
+
 function createDefaultData() {
-  const adminPass = createPasswordRecord("admin123");
-  const editorPass = createPasswordRecord("editor123");
-  const viewerPass = createPasswordRecord("viewer123");
+  const adminPass = createPasswordRecord(resolveBootstrapPassword("admin"));
+  const editorPass = createPasswordRecord(resolveBootstrapPassword("editor"));
+  const viewerPass = createPasswordRecord(resolveBootstrapPassword("viewer"));
 
   return {
     leads: [],
@@ -160,7 +183,15 @@ function createDefaultData() {
 
 function ensureDataFile() {
   if (!fs.existsSync(DATA_PATH)) {
-    fs.writeFileSync(DATA_PATH, JSON.stringify(createDefaultData(), null, 2), "utf8");
+    try {
+      fs.writeFileSync(DATA_PATH, JSON.stringify(createDefaultData(), null, 2), "utf8");
+    } catch (err) {
+      if (err.code === "BOOTSTRAP_PASSWORD_MISSING") {
+        console.error(err.message);
+        process.exit(1);
+      }
+      throw err;
+    }
   }
 }
 
@@ -724,7 +755,7 @@ const server = http.createServer(async (req, res) => {
       const leads = await fetchNotionLeads();
       sendJson(res, 200, leads);
     } catch (err) {
-      console.error("Notion leads fetch error:", err.message);
+      console.error("Notion leads fetch error:", err.code || err.message);
       const status = err.code === "NOTION_CONFIG_MISSING" ? 503 : 502;
       sendJson(res, status, {
         message: err.code === "NOTION_CONFIG_MISSING"
@@ -814,6 +845,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-  console.log("Default accounts: admin/admin123, editor/editor123, viewer/viewer123");
+  console.log(`Digital SME backend listening on port ${PORT}`);
 });
