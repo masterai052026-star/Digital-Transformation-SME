@@ -1,12 +1,32 @@
 {
   "finance": {
-    "labels": ["Năm 1", "Năm 2", "Năm 3"],
-    "revenue": [300000000, 550000000, 847058824],
+    "labels": [
+      "Năm 1",
+      "Năm 2",
+      "Năm 3"
+    ],
+    "revenue": [
+      300000000,
+      550000000,
+      847058824
+    ],
     "bep": 847058824
   },
   "marketing": {
-    "labels": ["Facebook", "LinkedIn", "TikTok"],
-    "leads": [40, 25, 15],
-    "cost_per_lead": [180000, 320000, 120000]
+    "labels": [
+      "Facebook",
+      "LinkedIn",
+      "TikTok"
+    ],
+    "leads": [
+      40,
+      25,
+      15
+    ],
+    "cost_per_lead": [
+      180000,
+      320000,
+      120000
+    ]
   }
 }
