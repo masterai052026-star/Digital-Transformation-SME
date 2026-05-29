@@ -417,7 +417,7 @@
 
       if (!form) return;
 
-      form.addEventListener('submit', function (e) {
+      form.addEventListener('submit', async function (e) {
         e.preventDefault();
         errorEl.classList.add('hidden');
         successEl.classList.add('hidden');
@@ -439,9 +439,31 @@
           return;
         }
 
-        successEl.textContent = 'Da ghi nhan lich test nhanh (' + testTime + '). Khong co CAPTCHA trong che do nay.';
-        successEl.classList.remove('hidden');
-        form.reset();
+        try {
+          var response = await fetch('/api/leads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fullName: fullName,
+              workEmail: workEmail,
+              companyName: document.getElementById('companyName').value.trim(),
+              phoneNumber: document.getElementById('phoneNumber').value.trim(),
+              preferredTime: testTime,
+              source: 'test-mode-form'
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('Không gửi được dữ liệu đăng ký.');
+          }
+
+          successEl.textContent = 'Da ghi nhan lead va lich test nhanh (' + testTime + ').';
+          successEl.classList.remove('hidden');
+          form.reset();
+        } catch (err) {
+          errorEl.textContent = 'Gui du lieu that bai. Vui long thu lai.';
+          errorEl.classList.remove('hidden');
+        }
       });
     })();
   </script>

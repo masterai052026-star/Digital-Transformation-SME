@@ -1,0 +1,17 @@
+{
+  "name": "digital-transformation-sme",
+  "version": "1.0.0",
+  "description": "Zero-dependency backend for SME consulting leads",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "express",
+    "sqlite",
+    "landing-page"
+  ],
+  "author": "",
+  "license": "MIT"
+}

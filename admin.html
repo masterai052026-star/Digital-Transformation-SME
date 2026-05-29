@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý Lead tư vấn</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <main class="max-w-6xl mx-auto px-4 py-10">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold">Quản lý Lead từ Landing Page</h1>
+      <button id="refreshBtn" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">Refresh</button>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-100 text-slate-700">
+            <tr>
+              <th class="px-4 py-3 text-left">ID</th>
+              <th class="px-4 py-3 text-left">Họ tên</th>
+              <th class="px-4 py-3 text-left">Email</th>
+              <th class="px-4 py-3 text-left">Doanh nghiệp</th>
+              <th class="px-4 py-3 text-left">Điện thoại</th>
+              <th class="px-4 py-3 text-left">Khung giờ</th>
+              <th class="px-4 py-3 text-left">Nguồn</th>
+              <th class="px-4 py-3 text-left">Tạo lúc</th>
+              <th class="px-4 py-3 text-left">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="leadTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function loadLeads() {
+      const body = document.getElementById('leadTableBody');
+      body.innerHTML = '<tr><td class="px-4 py-4" colspan="9">Đang tải...</td></tr>';
+      try {
+        const response = await fetch('/api/leads');
+        const leads = await response.json();
+
+        if (!Array.isArray(leads) || leads.length === 0) {
+          body.innerHTML = '<tr><td class="px-4 py-4" colspan="9">Chưa có lead nào.</td></tr>';
+          return;
+        }
+
+        body.innerHTML = leads.map(function (lead) {
+          return '<tr class="border-t border-slate-100">' +
+            '<td class="px-4 py-3">' + lead.id + '</td>' +
+            '<td class="px-4 py-3">' + (lead.full_name || '') + '</td>' +
+            '<td class="px-4 py-3">' + (lead.work_email || '') + '</td>' +
+            '<td class="px-4 py-3">' + (lead.company_name || '') + '</td>' +
+            '<td class="px-4 py-3">' + (lead.phone_number || '') + '</td>' +
+            '<td class="px-4 py-3">' + (lead.preferred_time || '') + '</td>' +
+            '<td class="px-4 py-3">' + (lead.source || '') + '</td>' +
+            '<td class="px-4 py-3">' + (lead.created_at || '') + '</td>' +
+            '<td class="px-4 py-3"><button class="text-red-600 hover:underline" onclick="deleteLead(' + lead.id + ')">Xóa</button></td>' +
+          '</tr>';
+        }).join('');
+      } catch (err) {
+        body.innerHTML = '<tr><td class="px-4 py-4 text-red-600" colspan="9">Không tải được dữ liệu.</td></tr>';
+      }
+    }
+
+    async function deleteLead(id) {
+      if (!confirm('Xóa lead #' + id + '?')) return;
+      await fetch('/api/leads/' + id, { method: 'DELETE' });
+      loadLeads();
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', loadLeads);
+    loadLeads();
+  </script>
+</body>
+</html>
