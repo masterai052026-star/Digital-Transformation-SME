@@ -493,6 +493,83 @@ async function startAgentGeneration(context, username) {
   };
 }
 
+const DEFAULT_CHART_DATA = {
+  finance: {
+    labels: ["Năm 1", "Năm 2", "Năm 3"],
+    revenue: [300000000, 550000000, 847058824],
+    bep: 847058824
+  },
+  marketing: {
+    labels: ["Facebook", "LinkedIn", "TikTok"],
+    leads: [40, 25, 15],
+    cost_per_lead: [180000, 320000, 120000]
+  }
+};
+
+async function readChartData() {
+  try {
+    const raw = await fsp.readFile(CHART_DATA_PATH, "utf8");
+    const parsed = JSON.parse(raw);
+    return {
+      finance: { ...DEFAULT_CHART_DATA.finance, ...(parsed.finance || {}) },
+      marketing: { ...DEFAULT_CHART_DATA.marketing, ...(parsed.marketing || {}) }
+    };
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      return JSON.parse(JSON.stringify(DEFAULT_CHART_DATA));
+    }
+    throw err;
+  }
+}
+
+function parsePercentFromCommand(command) {
+  const normalized = String(command || "").toLowerCase();
+  const percentMatch = normalized.match(/(\d+(?:[.,]\d+)?)\s*%/);
+  if (percentMatch) {
+    return parseFloat(percentMatch[1].replace(",", "."));
+  }
+  const numberMatch = normalized.match(/(\d+(?:[.,]\d+)?)/);
+  if (numberMatch) {
+    return parseFloat(numberMatch[1].replace(",", "."));
+  }
+  return null;
+}
+
+function applyUserCommandToChartData(chartData, userCommand) {
+  const command = String(userCommand || "").toLowerCase();
+  if (!command.includes("marketing")) {
+    return { applied: false, message: "Câu lệnh không liên quan đến marketing." };
+  }
+
+  const percent = parsePercentFromCommand(command);
+  if (percent == null || Number.isNaN(percent)) {
+    return { applied: false, message: "Không đọc được tỷ lệ phần trăm trong câu lệnh." };
+  }
+
+  const baseCosts = [...(chartData.marketing.cost_per_lead || DEFAULT_CHART_DATA.marketing.cost_per_lead)];
+  let factor;
+  let action;
+
+  if (command.includes("giảm")) {
+    factor = 1 - percent / 100;
+    action = "giảm";
+  } else if (command.includes("tăng")) {
+    factor = 1 + percent / 100;
+    action = "tăng";
+  } else {
+    return { applied: false, message: "Câu lệnh marketing cần chứa \"tăng\" hoặc \"giảm\"." };
+  }
+
+  chartData.marketing.cost_per_lead = baseCosts.map(cost => Math.round(cost * factor));
+
+  return {
+    applied: true,
+    message: `Đã ${action} cost_per_lead marketing ${percent}%.`,
+    factor,
+    percent
+  };
+}
+
 function parseBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -737,14 +814,24 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && pathname === "/api/update-charts") {
     try {
       const body = await parseBody(req);
-      if (!body || typeof body !== "object" || Array.isArray(body)) {
-        sendJson(res, 400, { message: "Dữ liệu biểu đồ không hợp lệ." });
+      const userCommand = body.user_command ?? body.userCommand ?? "";
+      if (!String(userCommand).trim()) {
+        sendJson(res, 400, { ok: false, message: "Thiếu user_command trong body." });
         return;
       }
-      await fsp.writeFile(CHART_DATA_PATH, JSON.stringify(body, null, 2), "utf8");
-      sendJson(res, 200, { ok: true, message: "Đã cập nhật dữ liệu biểu đồ." });
+
+      const chartData = await readChartData();
+      const result = applyUserCommandToChartData(chartData, userCommand);
+      await fsp.writeFile(CHART_DATA_PATH, JSON.stringify(chartData, null, 2), "utf8");
+
+      sendJson(res, 200, {
+        ok: true,
+        applied: result.applied,
+        message: result.message,
+        data: chartData
+      });
     } catch (err) {
-      sendJson(res, 400, { message: "JSON không hợp lệ." });
+      sendJson(res, 400, { ok: false, message: "Không xử lý được câu lệnh.", detail: err.message });
     }
     return;
   }
