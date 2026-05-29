@@ -188,6 +188,35 @@ function ensureDataFile() {
   }
 }
 
+function applyPasswordEnvToUser(user, password) {
+  const passRecord = createPasswordRecord(password);
+  user.salt = passRecord.salt;
+  user.passwordHash = passRecord.hash;
+}
+
+function syncBootstrapPasswordsFromEnv() {
+  ensureDataFile();
+  const envMap = [
+    { username: "admin", envKey: "ADMIN_INITIAL_PASSWORD" },
+    { username: "editor", envKey: "EDITOR_INITIAL_PASSWORD" },
+    { username: "viewer", envKey: "VIEWER_INITIAL_PASSWORD" }
+  ];
+  const updates = envMap.filter(item => process.env[item.envKey]);
+  if (!updates.length) return;
+
+  const data = JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
+  if (!Array.isArray(data.users)) return;
+
+  updates.forEach(item => {
+    const user = data.users.find(u => u.username === item.username);
+    if (user) applyPasswordEnvToUser(user, process.env[item.envKey]);
+  });
+
+  data.updatedAt = new Date().toISOString();
+  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), "utf8");
+  console.log("Bootstrap credentials synced from environment variables.");
+}
+
 async function readData() {
   ensureDataFile();
   const raw = await fsp.readFile(DATA_PATH, "utf8");
@@ -838,5 +867,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
+  syncBootstrapPasswordsFromEnv();
   console.log(`Digital SME backend listening on port ${PORT}`);
 });
