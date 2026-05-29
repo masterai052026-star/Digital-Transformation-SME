@@ -317,9 +317,35 @@ function contentTypeByExt(ext) {
     ".html": "text/html; charset=utf-8",
     ".css": "text/css; charset=utf-8",
     ".js": "application/javascript; charset=utf-8",
-    ".json": "application/json; charset=utf-8"
+    ".json": "application/json; charset=utf-8",
+    ".md": "text/markdown; charset=utf-8"
   };
   return map[ext.toLowerCase()] || "application/octet-stream";
+}
+
+const REPORT_DEPARTMENTS = {
+  sales: { file: path.join("agents", "leader-sales.md"), title: "Kinh doanh" },
+  marketing: { file: path.join("agents", "leader-marketing.md"), title: "Marketing" },
+  finance: { file: path.join("agents", "leader-finance.md"), title: "Tài chính" }
+};
+
+async function readReportFile(department) {
+  const meta = REPORT_DEPARTMENTS[department];
+  if (!meta) return null;
+
+  const filePath = path.resolve(ROOT_DIR, meta.file);
+  if (!filePath.startsWith(path.resolve(ROOT_DIR))) return null;
+  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) return null;
+
+  const content = await fsp.readFile(filePath, "utf8");
+  const stat = fs.statSync(filePath);
+  return {
+    department,
+    title: meta.title,
+    filename: meta.file,
+    content,
+    updatedAt: stat.mtime.toISOString()
+  };
 }
 
 function parseBody(req) {
@@ -847,6 +873,36 @@ const server = http.createServer(async (req, res) => {
     await writeData(data);
     res.writeHead(204, { "Access-Control-Allow-Origin": "*" });
     res.end();
+    return;
+  }
+
+  if (req.method === "GET" && pathname.startsWith("/api/reports/")) {
+    const session = requireAuth(req, res, "content.read");
+    if (!session) return;
+
+    const department = pathname.split("/").pop();
+    const wantsPlainText = (req.headers.accept || "").includes("text/plain");
+
+    try {
+      const report = await readReportFile(department);
+      if (!report) {
+        sendJson(res, 404, { message: "Không tìm thấy báo cáo cho phòng ban này." });
+        return;
+      }
+
+      if (wantsPlainText) {
+        res.writeHead(200, {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Access-Control-Allow-Origin": "*"
+        });
+        res.end(report.content);
+        return;
+      }
+
+      sendJson(res, 200, report);
+    } catch (err) {
+      sendJson(res, 500, { message: "Không đọc được file báo cáo.", detail: err.message });
+    }
     return;
   }
 

@@ -5,6 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — Digital SME</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    .report-md h1 { font-size: 1.5rem; font-weight: 700; margin: 1.25rem 0 0.75rem; color: #0f172a; }
+    .report-md h2 { font-size: 1.25rem; font-weight: 700; margin: 1.25rem 0 0.5rem; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.35rem; }
+    .report-md h3 { font-size: 1.05rem; font-weight: 600; margin: 1rem 0 0.5rem; color: #334155; }
+    .report-md p { margin: 0.65rem 0; line-height: 1.65; color: #334155; }
+    .report-md ul, .report-md ol { margin: 0.65rem 0 0.65rem 1.25rem; color: #334155; }
+    .report-md ul { list-style: disc; }
+    .report-md ol { list-style: decimal; }
+    .report-md li { margin: 0.35rem 0; line-height: 1.6; }
+    .report-md strong { font-weight: 600; color: #0f172a; }
+    .report-md blockquote { border-left: 4px solid #93c5fd; padding-left: 1rem; margin: 1rem 0; color: #475569; font-style: italic; }
+    .report-md code { background: #f1f5f9; padding: 0.1rem 0.35rem; border-radius: 0.25rem; font-size: 0.875em; }
+    .report-md pre { background: #0f172a; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 1rem 0; }
+    .report-md pre code { background: transparent; padding: 0; color: inherit; }
+    .report-md hr { border: none; border-top: 1px solid #e2e8f0; margin: 1.25rem 0; }
+    .report-md table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.875rem; }
+    .report-md th, .report-md td { border: 1px solid #e2e8f0; padding: 0.5rem 0.75rem; text-align: left; }
+    .report-md th { background: #f8fafc; font-weight: 600; }
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
   <div id="authGate" class="min-h-screen flex items-center justify-center">
@@ -29,6 +49,7 @@
       <div class="flex gap-2 mb-6">
         <button data-tab="leads" class="tab-btn px-4 py-2 rounded-lg bg-blue-600 text-white font-medium">Khách hàng (Leads)</button>
         <button data-tab="content" class="tab-btn px-4 py-2 rounded-lg bg-white border border-slate-300 font-medium">Nội dung Frontend</button>
+        <button data-tab="reports" class="tab-btn px-4 py-2 rounded-lg bg-white border border-slate-300 font-medium">Chiến lược AI Agents</button>
         <button data-tab="users" id="usersTabBtn" class="tab-btn px-4 py-2 rounded-lg bg-white border border-slate-300 font-medium hidden">Tài khoản</button>
       </div>
 
@@ -74,6 +95,22 @@
         </div>
         <form id="contentForm" class="grid md:grid-cols-2 gap-4"></form>
         <div id="contentMessage" class="mt-4 hidden"></div>
+      </section>
+
+      <section id="tab-reports" class="tab-panel hidden">
+        <div class="mb-4">
+          <h2 class="text-lg font-bold">Chiến lược AI Agents</h2>
+          <p class="text-sm text-slate-500 mt-1">Báo cáo chiến lược tự động từ AI Agents — chọn phòng ban để xem.</p>
+        </div>
+        <div class="flex flex-wrap gap-2 mb-4">
+          <button type="button" data-report="sales" class="report-dept-btn px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium hover:bg-slate-50">Kinh doanh (Sales)</button>
+          <button type="button" data-report="marketing" class="report-dept-btn px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium hover:bg-slate-50">Marketing</button>
+          <button type="button" data-report="finance" class="report-dept-btn px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium hover:bg-slate-50">Tài chính (Finance)</button>
+        </div>
+        <p id="reportMeta" class="text-sm text-slate-500 mb-3 hidden"></p>
+        <div id="reportContent" class="bg-white border border-slate-200 rounded-xl p-6 md:p-8 min-h-[320px]">
+          <p class="text-slate-400 text-sm">Chọn một phòng ban ở trên để tải báo cáo Markdown.</p>
+        </div>
       </section>
 
       <section id="tab-users" class="tab-panel hidden">
@@ -293,6 +330,46 @@
       active.classList.remove('bg-white', 'border', 'border-slate-300');
       if (name === 'leads') loadLeads();
       if (name === 'users') loadUsers();
+    }
+
+    var activeReportDepartment = null;
+
+    function setActiveReportButton(department) {
+      document.querySelectorAll('.report-dept-btn').forEach(function (btn) {
+        var isActive = btn.getAttribute('data-report') === department;
+        btn.classList.toggle('bg-blue-600', isActive);
+        btn.classList.toggle('text-white', isActive);
+        btn.classList.toggle('border-blue-600', isActive);
+        btn.classList.toggle('bg-white', !isActive);
+        btn.classList.toggle('border-slate-300', !isActive);
+      });
+    }
+
+    async function loadReport(department) {
+      var contentEl = document.getElementById('reportContent');
+      var metaEl = document.getElementById('reportMeta');
+      activeReportDepartment = department;
+      setActiveReportButton(department);
+      contentEl.className = 'bg-white border border-slate-200 rounded-xl p-6 md:p-8 min-h-[320px]';
+      contentEl.innerHTML = '<p class="text-slate-500 text-sm">Đang tải báo cáo...</p>';
+      metaEl.classList.add('hidden');
+
+      try {
+        var res = await apiFetch('/api/reports/' + department);
+        var data = await res.json().catch(function () { return {}; });
+
+        if (!res.ok) {
+          contentEl.innerHTML = '<p class="text-red-600 text-sm">' + escapeHtml(data.message || 'Không tải được báo cáo.') + '</p>';
+          return;
+        }
+
+        metaEl.textContent = (data.title || department) + ' · ' + data.filename + ' · Cập nhật: ' + formatDateTime(data.updatedAt);
+        metaEl.classList.remove('hidden');
+        contentEl.className = 'bg-white border border-slate-200 rounded-xl p-6 md:p-8 min-h-[320px] report-md';
+        contentEl.innerHTML = marked.parse(data.content || '');
+      } catch (err) {
+        contentEl.innerHTML = '<p class="text-red-600 text-sm">Lỗi kết nối server. Vui lòng thử lại.</p>';
+      }
     }
 
     async function loadLeads() {
@@ -523,6 +600,9 @@
 
     document.querySelectorAll('.tab-btn').forEach(function (btn) {
       btn.addEventListener('click', function () { switchTab(btn.getAttribute('data-tab')); });
+    });
+    document.querySelectorAll('.report-dept-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { loadReport(btn.getAttribute('data-report')); });
     });
     document.getElementById('refreshLeadsBtn').addEventListener('click', loadLeads);
     document.getElementById('saveContentBtn').addEventListener('click', saveContent);

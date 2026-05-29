@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "setup-notion-db": "node setup-db.js",
+    "run-agents": "node run-agents.js"
   },
   "keywords": [
     "express",
