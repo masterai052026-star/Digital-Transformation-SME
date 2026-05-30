@@ -560,6 +560,11 @@ function applyUserCommandToChartData(chartData, userCommand) {
   chartData.marketing.cost_per_lead = baseCosts.map(cost => Math.round(cost * factor));
 }
 
+function extractUserCommand(body) {
+  const raw = body.user_command ?? body.context ?? body.action ?? "";
+  return String(raw).trim().replace(/^=+/, "");
+}
+
 function parseBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -804,9 +809,9 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && pathname === "/api/update-charts") {
     try {
       const body = await parseBody(req);
-      const userCommand = body.user_command;
+      const userCommand = extractUserCommand(body);
 
-      if (!userCommand || !String(userCommand).trim()) {
+      if (!userCommand) {
         sendJson(res, 400, { message: "Thiếu user_command trong body." });
         return;
       }
