@@ -538,36 +538,26 @@ function parsePercentFromCommand(command) {
 function applyUserCommandToChartData(chartData, userCommand) {
   const command = String(userCommand || "").toLowerCase();
   if (!command.includes("marketing")) {
-    return { applied: false, message: "Câu lệnh không liên quan đến marketing." };
+    throw new Error("Câu lệnh không liên quan đến marketing.");
   }
 
   const percent = parsePercentFromCommand(command);
   if (percent == null || Number.isNaN(percent)) {
-    return { applied: false, message: "Không đọc được tỷ lệ phần trăm trong câu lệnh." };
+    throw new Error("Không đọc được tỷ lệ phần trăm trong câu lệnh.");
   }
 
   const baseCosts = [...(chartData.marketing.cost_per_lead || DEFAULT_CHART_DATA.marketing.cost_per_lead)];
   let factor;
-  let action;
 
   if (command.includes("giảm")) {
     factor = 1 - percent / 100;
-    action = "giảm";
   } else if (command.includes("tăng")) {
     factor = 1 + percent / 100;
-    action = "tăng";
   } else {
-    return { applied: false, message: "Câu lệnh marketing cần chứa \"tăng\" hoặc \"giảm\"." };
+    throw new Error('Câu lệnh marketing cần chứa "tăng" hoặc "giảm".');
   }
 
   chartData.marketing.cost_per_lead = baseCosts.map(cost => Math.round(cost * factor));
-
-  return {
-    applied: true,
-    message: `Đã ${action} cost_per_lead marketing ${percent}%.`,
-    factor,
-    percent
-  };
 }
 
 function parseBody(req) {
@@ -814,24 +804,19 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && pathname === "/api/update-charts") {
     try {
       const body = await parseBody(req);
-      const userCommand = body.user_command ?? body.userCommand ?? "";
-      if (!String(userCommand).trim()) {
-        sendJson(res, 400, { ok: false, message: "Thiếu user_command trong body." });
+      const userCommand = body.user_command;
+
+      if (!userCommand || !String(userCommand).trim()) {
+        sendJson(res, 400, { message: "Thiếu user_command trong body." });
         return;
       }
 
       const chartData = await readChartData();
-      const result = applyUserCommandToChartData(chartData, userCommand);
+      applyUserCommandToChartData(chartData, userCommand);
       await fsp.writeFile(CHART_DATA_PATH, JSON.stringify(chartData, null, 2), "utf8");
-
-      sendJson(res, 200, {
-        ok: true,
-        applied: result.applied,
-        message: result.message,
-        data: chartData
-      });
+      sendJson(res, 200, { message: "Update success" });
     } catch (err) {
-      sendJson(res, 400, { ok: false, message: "Không xử lý được câu lệnh.", detail: err.message });
+      sendJson(res, 400, { message: err.message || "Không xử lý được câu lệnh." });
     }
     return;
   }
